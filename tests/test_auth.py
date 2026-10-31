@@ -142,3 +142,4 @@ def test_get_me_endpoint(client, db_session):
     assert data["username"] == "admin_me"
     assert data["role"] == "Admin"
     assert "password_hash" not in data
+

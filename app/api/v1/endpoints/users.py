@@ -214,3 +214,4 @@ def update_user_status(
     db.commit()
 
     return user
+

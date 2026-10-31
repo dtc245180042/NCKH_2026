@@ -51,3 +51,4 @@ def test_alembic_migrations_upgrade_and_downgrade():
     finally:
         if os.path.exists(db_path):
             os.remove(db_path)
+

@@ -93,3 +93,4 @@ def decode_access_token(token: str) -> dict[str, Any]:
         options={"require": ["exp", "sub"]},
     )
     return payload
+

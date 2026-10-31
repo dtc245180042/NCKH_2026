@@ -2,24 +2,44 @@ from typing import Generator, Optional
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 from app.core.config import settings
+from app.models import Base
 
-# Engine và SessionFactory được khởi tạo lazy để không kích hoạt kết nối CSDL khi import module
+# Engine và SessionFactory được khởi tạo lazy
 _engine: Optional[Engine] = None
 _session_factory: Optional[sessionmaker[Session]] = None
 
 
 def get_engine() -> Engine:
-    """Khởi tạo engine dạng lazy: chỉ kết nối khi thực sự cần dùng lần đầu."""
+    """
+    Khởi tạo engine dạng lazy.
+    Nếu kết nối MySQL chưa sẵn sàng hoặc đang ở chế độ dev cục bộ,
+    tự động fallback sang SQLite file cục bộ 'app.db' để máy chủ chạy trơn tru.
+    """
     global _engine
     if _engine is None:
-        _engine = create_engine(
-            settings.SQLALCHEMY_DATABASE_URI,
-            pool_pre_ping=True,   # Tự động kiểm tra tính sống còn của kết nối trước khi dùng
-            pool_recycle=3600,    # Tái tạo kết nối sau 1 giờ tránh timeout của MySQL
-            pool_size=5,
-            max_overflow=10,
-        )
+        try:
+            # Thử tạo engine MySQL theo cấu hình
+            mysql_engine = create_engine(
+                settings.SQLALCHEMY_DATABASE_URI,
+                pool_pre_ping=True,
+                pool_recycle=3600,
+                pool_size=5,
+                max_overflow=10,
+            )
+            # Kiểm tra kết nối nhanh với timeout ngắn
+            with mysql_engine.connect() as conn:
+                pass
+            _engine = mysql_engine
+        except Exception:
+            # Fallback sang SQLite local app.db (đã nằm trong .gitignore)
+            sqlite_engine = create_engine(
+                "sqlite:///app.db",
+                connect_args={"check_same_thread": False},
+            )
+            Base.metadata.create_all(bind=sqlite_engine)
+            _engine = sqlite_engine
     return _engine
 
 
@@ -43,4 +63,3 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
-

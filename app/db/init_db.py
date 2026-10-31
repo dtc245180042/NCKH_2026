@@ -51,3 +51,4 @@ def init_initial_admin(db: Session) -> User:
 
     logger.info(f"Đã tạo thành công tài khoản Admin ban đầu: {admin.username}")
     return admin
+

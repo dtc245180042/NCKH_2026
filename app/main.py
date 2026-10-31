@@ -1,5 +1,8 @@
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from app.api.v1.router import api_router
 from app.core.config import settings
 
@@ -10,7 +13,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS Middleware Configuration (Tuần thủ bảo mật: Đọc từ biến môi trường, không dùng '*')
+# CORS Middleware Configuration
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
@@ -20,16 +23,18 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
+# Static Files & Frontend UI
+STATIC_DIR = Path(__file__).resolve().parent / "static"
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
 # Gắn Router API v1
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 
 @app.get("/api/health", tags=["Health Check"])
 def health_check():
-    """Endpoint kiểm tra trạng thái hoạt động của hệ thống.
-    
-    Hoàn toàn độc lập, không phụ thuộc vào trạng thái kết nối MySQL.
-    """
+    """Endpoint kiểm tra trạng thái hoạt động của hệ thống."""
     return {
         "status": "healthy",
         "project": settings.PROJECT_NAME,
@@ -39,8 +44,17 @@ def health_check():
 
 @app.get("/", tags=["Root"])
 def root():
+    """Endpoint root API trả về metadata theo chuẩn ban đầu."""
     return {
         "message": f"Welcome to {settings.PROJECT_NAME} API",
         "docs_url": "/docs",
         "health_check": "/api/health",
+        "app_ui": "/app",
     }
+
+
+@app.get("/app", tags=["Frontend UI"])
+def app_ui():
+    """Phục vụ giao diện người dùng chính (Frontend Dashboard)."""
+    index_file = STATIC_DIR / "index.html"
+    return FileResponse(str(index_file))
