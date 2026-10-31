@@ -1117,6 +1117,7 @@ class SimulationEngine {
     // Khởi tạo hệ thống
     this.initCanvasSize();
     this.bindEvents();
+    this.initWebSocket();
     this.logTelemetry('[HỆ THỐNG] Engine Canvas 2D 60 FPS đã khởi động.');
 
     // Bắt đầu vòng lặp render
@@ -1147,6 +1148,37 @@ class SimulationEngine {
     this.viewOffsetY = (this.canvasHeight - CONFIG.BASE_HEIGHT * this.viewScale) / 2;
 
     this.dpr = dpr;
+  }
+
+  /**
+   * Kết nối kênh WebSocket 60 FPS từ Backend FastAPI (nếu chạy server)
+   * Tự động fallback về chế độ mô phỏng client mượt mà khi chạy standalone
+   */
+  initWebSocket() {
+    if (window.location.protocol === 'file:') return;
+    try {
+      const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${wsProtocol}//${window.location.host}/ws/simulation/stream`;
+      this.socket = new WebSocket(wsUrl);
+
+      this.socket.onopen = () => {
+        this.logTelemetry('[WEBSOCKET] Đã kết nối luồng Backend FastAPI 60 FPS.');
+      };
+
+      this.socket.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data && data.total_sorted !== undefined) {
+            this.totalSorted = Math.max(this.totalSorted, data.total_sorted);
+            this.updateCountersDom();
+          }
+        } catch (e) {}
+      };
+
+      this.socket.onclose = () => {
+        this.logTelemetry('[WEBSOCKET] Chuyển sang mô phỏng độc lập (Client-side 60 FPS).');
+      };
+    } catch (e) {}
   }
 
   /**
