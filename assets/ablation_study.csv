@@ -1,0 +1,4 @@
+Model,Params (M),Size (MB),mAP@0.5,GPU Latency (ms),CPU FPS
+YOLOv8n,3.2,6.2,93.4%,16.8,22.4
+YOLOv11n,2.8,5.8,95.1%,15.1,26.1
+YOLOv12n,2.6,5.4,96.5%,14.2,29.8
