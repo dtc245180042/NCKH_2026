@@ -22,3 +22,7 @@ Thumbs.db
 # Logs and temporary files
 *.log
 *.tmp
+
+# Word lock files
+~$*
+
