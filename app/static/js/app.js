@@ -396,28 +396,59 @@ function initUserModal() {
     }
 }
 
-// 5. Canvas 2D Engine (Clean Light Theme)
+// 5. Canvas 2D Engine kết nối WebSocket Thời Gian Thực 60 FPS
 function initCanvasEngine() {
     const canvas = document.getElementById("warehouse-canvas");
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
 
     let animTime = 0;
+    let ws = null;
+
+    // Thiết lập kết nối WebSocket với Backend
+    function connectWebSocket() {
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const wsUrl = `${protocol}//${window.location.host}/api/v1/ws/simulation/stream`;
+        ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => {
+            console.log("WebSocket 60 FPS đã kết nối thành công");
+        };
+
+        ws.onmessage = (event) => {
+            try {
+                const snapshot = JSON.parse(event.data);
+                if (snapshot.packages) {
+                    AppState.itemsOnBelt = snapshot.packages;
+                }
+                if (snapshot.amr) {
+                    AppState.amr = snapshot.amr;
+                }
+            } catch (e) {
+                // Ignore parse errors
+            }
+        };
+
+        ws.onclose = () => {
+            // Tự động kết nối lại sau 2 giây nếu bị ngắt
+            setTimeout(connectWebSocket, 2000);
+        };
+    }
+
+    connectWebSocket();
 
     const btnSpawn = document.getElementById("btn-spawn-pkg");
     const btnToggleCam = document.getElementById("btn-toggle-cam");
 
     if (btnSpawn) {
         btnSpawn.addEventListener("click", () => {
-            const nextId = AppState.itemsOnBelt.length + 7;
-            AppState.itemsOnBelt.push({
-                id: nextId,
-                x: 60,
-                y: 155,
-                barcode: `PKG-${84000 + nextId}`,
-                conf: (0.93 + Math.random() * 0.06).toFixed(2),
-                gate: (nextId % 3) + 1
-            });
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const nextId = AppState.itemsOnBelt.length + 101;
+                ws.send(JSON.stringify({
+                    action: "SPAWN_PACKAGE",
+                    barcode: `PKG-WS-${nextId}`
+                }));
+            }
         });
     }
 
