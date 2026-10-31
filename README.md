@@ -2,12 +2,12 @@
 
 > **Đề tài Nghiên cứu Khoa học Sinh viên — SV2026-ICTU-08**  
 > **Trường Đại học Công nghệ Thông tin và Truyền thông – Đại học Thái Nguyên (ICTU)**  
-> **Giảng viên hướng dẫn:** ThS. Hoàng Thị Liên  
+> **Giảng viên hướng dẫn:** ThS. Phạm Thị Liên  
 > **Nhóm sinh viên thực hiện:**
 > - Nguyễn Văn Toàn (Chủ nhiệm đề tài)
-> - Bùi Thị Loan
-> - Bùi Duy Hà
-> - Trần Quang Vinh
+> - Trần Thị Loan
+> - Nguyễn Thị Thu Hà
+> - Nguyễn Hồng Vinh
 
 ---
 

@@ -5,8 +5,8 @@ description: Quy trình AI-Augmented SDLC toàn diện cho Hệ thống AI truy 
 
 # AI-Augmented SDLC — AI Smart Logistics Tracking System
 
-> **Đề tài NCKH Sinh viên: SV2026-ICTU-08 | GVHD: ThS. Hoàng Thị Liên**  
-> **Nhóm thực hiện:** Nguyễn Văn Toàn (Chủ nhiệm), Bùi Thị Loan, Bùi Duy Hà, Trần Quang Vinh
+> **Đề tài NCKH Sinh viên: SV2026-ICTU-08 | GVHD: ThS. Phạm Thị Liên**  
+> **Nhóm thực hiện:** Nguyễn Văn Toàn (Chủ nhiệm), Trần Thị Loan, Nguyễn Thị Thu Hà, Nguyễn Hồng Vinh
 
 ---
 

@@ -30,3 +30,4 @@ Issue Id,Issue Type,Summary,Assignee,Priority,Story Points,Sprint,Epic Name,Epic
 124,Task,Ra soat bao mat loai bo mat khau mac dinh kiem tra toan ven ma nguon,Ha,Medium,3,Sprint 6,,LOG-EPIC-05,Backend,Kiem tra khong hardcode secret loai bo admin_password_2026 kiem tra .gitignore truoc khi merge
 125,Story,Hoan thien Bao cao tong ket NCKH Word 64 trang xu ly cac the boi vang,Toan,Highest,8,Sprint 6,,LOG-EPIC-05,Docs,Ra soat 38 muc nhat ky thay doi kiem tra so lieu Bang 5.8 xac nhan ma so de tai phong KH-CN
 126,Task,Chuan bi slide PowerPoint 18 trang va quay video demo 3 phut minh chung de tai,Toan,High,5,Sprint 6,,LOG-EPIC-05,Docs,Xay dung slide thuyet trinh quay video chat luong cao minh chung AI Tracking va AMR A*
+

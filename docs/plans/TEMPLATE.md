@@ -1,6 +1,6 @@
 # Kế hoạch Thực hiện: [Tên tính năng / Tên Bugfix]
 - **Branch:** `feat/<ten-chuc-nang>` hoặc `fix/<ten-bug>`
-- **Người thực hiện:** [Nguyễn Văn Toàn / Bùi Thị Loan / Bùi Duy Hà / Trần Quang Vinh]
+- **Người thực hiện:** [Nguyễn Văn Toàn / Trần Thị Loan / Nguyễn Thị Thu Hà / Nguyễn Hồng Vinh]
 - **Yêu cầu / Use Case liên quan:** [Ví dụ: UC-01, UC-08, UC-12, NFR-01...]
 - **Trạng thái:** Chờ xác nhận từ người dùng (Human Gate 1)
 

@@ -22,16 +22,16 @@ Danh sách dưới đây được phân loại theo 3 mức độ ưu tiên. Nh�
   - **Vị trí:** Trang bìa phụ và Trang thông tin kết quả nghiên cứu.
   - **Việc cần làm:**
     - Sinh viên Chủ nhiệm đề tài (Nguyễn Văn Toàn) ký và ghi rõ họ tên.
-    - Giảng viên hướng dẫn (ThS. Hoàng Thị Liên) ký xác nhận đồng ý cho nghiệm thu.
+    - Giảng viên hướng dẫn (ThS. Phạm Thị Liên) ký xác nhận đồng ý cho nghiệm thu.
     - Trưởng Khoa / Đại diện Ban Chủ nhiệm Khoa CNTT ký và đóng dấu (nếu có).
 
 - [ ] **4. Xác nhận sự thống nhất phân công nhân sự (Bảng 1.2)**
   - **Vị trí:** Trang thông tin kết quả nghiên cứu và Bảng 1.2 (Chương 1).
   - **Việc cần làm:** Đảm bảo cả 4 thành viên đều nắm rõ vai trò đã được chuẩn hóa khớp giữa Thuyết minh và Dự toán kinh phí:
     - **Nguyễn Văn Toàn:** Chủ nhiệm đề tài, phụ trách thuật toán ByteTrack, tích hợp hệ thống và viết Báo cáo tổng kết.
-    - **Bùi Thị Loan:** Thư ký, phụ trách chính việc xây dựng tập dữ liệu video mô phỏng và gán nhãn (khớp thù lao 400.000đ trong dự toán).
-    - **Bùi Duy Hà:** Thành viên, phụ trách kiểm thử mô phỏng cổng IoT và thuật toán tìm đường A* cho AMR.
-    - **Trần Quang Vinh:** Thành viên, phụ trách huấn luyện mô hình YOLOv12n, đo đạc thông số thực nghiệm và hỗ trợ kỹ thuật.
+    - **Trần Thị Loan:** Thư ký, phụ trách chính việc xây dựng tập dữ liệu video mô phỏng và gán nhãn (khớp thù lao 400.000đ trong dự toán).
+    - **Nguyễn Thị Thu Hà:** Thành viên, phụ trách kiểm thử mô phỏng cổng IoT và thuật toán tìm đường A* cho AMR.
+    - **Nguyễn Hồng Vinh:** Thành viên, phụ trách huấn luyện mô hình YOLOv12n, đo đạc thông số thực nghiệm và hỗ trợ kỹ thuật.
 
 - [ ] **5. Kiểm tra tính sẵn sàng của Kho lưu trữ mã nguồn (GitHub / Link bàn giao)**
   - **Vị trí:** Phụ lục B (Mục 3, Bước 1).

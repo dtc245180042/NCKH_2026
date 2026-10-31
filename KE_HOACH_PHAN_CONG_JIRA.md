@@ -6,7 +6,7 @@
 
 ## 1. NGUYÊN TẮC PHÂN CÔNG THEO NĂNG LỰC & MỨC ĐỘ KHÓ
 
-Phân bổ công việc được thiết kế theo đúng yêu cầu: **Nguyễn Văn Toàn** (Chủ nhiệm / Kiến trúc sư trưởng) nắm toàn bộ kỹ năng và chịu trách nhiệm các phần thuật toán khó nhất; **Bùi Thị Loan**, **Trần Quang Vinh**, **Bùi Duy Hà** đảm nhiệm các phân hệ chuyên biệt với độ phức tạp phù hợp:
+Phân bổ công việc được thiết kế theo đúng yêu cầu: **Nguyễn Văn Toàn** (Chủ nhiệm / Kiến trúc sư trưởng) nắm toàn bộ kỹ năng và chịu trách nhiệm các phần thuật toán khó nhất; **Trần Thị Loan**, **Nguyễn Hồng Vinh**, **Nguyễn Thị Thu Hà** đảm nhiệm các phân hệ chuyên biệt với độ phức tạp phù hợp:
 
 ```
                                NGUYỄN VĂN TOÀN
@@ -26,9 +26,9 @@ Phân bổ công việc được thiết kế theo đúng yêu cầu: **Nguyễn
 | Thành viên | Vai trò Jira | Độ khó | Trách nhiệm chính & Module Code | Skills Antigravity áp dụng |
 |:---|:---|:---:|:---|:---|
 | **Nguyễn Văn Toàn** | Project Lead / Core AI & Backend | **Cực khó (Rất cao)** | 1. Tích hợp thuật toán **ByteTrack** (bộ lọc Kalman 8D, Hungarian matching 2 giai đoạn, xử lý che khuất).<br>2. Thuật toán tìm đường **A\*** cho Robot AMR (tránh vật cản động, Local Re-planning).<br>3. Kiến trúc Backend **FastAPI** bất đồng bộ & **WebSocket Stream** 60 FPS.<br>4. Thiết kế CSDL 3NF và tích hợp toàn hệ thống. | `yolov12-bytetrack-vision`<br>`amr-pathfinding-a-star`<br>`fastapi-pro`<br>`architecture-design`<br>`ai-augmented-sdlc` |
-| **Bùi Thị Loan** | AI Data Specialist | **Trung bình - Khó** | 1. Tự sinh dữ liệu mô phỏng (Synthetic Data 2.500 frames).<br>2. Gán nhãn Bounding Box và chia tập Train/Val/Test chống rò rỉ dữ liệu.<br>3. Chạy thực nghiệm huấn luyện YOLOv12n (100 Epochs).<br>4. Xuất các bảng số liệu mAP, Loss, PR-Curve. | `yolov12-bytetrack-vision`<br>`requirements-analysis` |
-| **Bùi Duy Hà** | IoT & Logistics Logic Dev | **Vừa phải** | 1. Logic phân loại cổng IoT (Sorting Gates 1, 2, 3).<br>2. Cơ chế gán mã bưu chính ảo (Virtual Attribution).<br>3. Cơ chế xử lý hàng lỗi về làn Re-check.<br>4. Xử lý ngoại lệ cảm biến và báo kẹt cổng (Anti-jam alert). | `iot-sorting-control`<br>`fastapi-pro` |
-| **Trần Quang Vinh**| Frontend & QA Engineer | **Vừa phải** | 1. Kết xuất đồ họa mô phỏng **HTML5 Canvas 2D** mượt mà 60 FPS.<br>2. Xây dựng Dashboard hiển thị KPI và biểu đồ thời gian thực.<br>3. Thực thi và ghi log **35 Test Cases chức năng** (Phụ lục C).<br>4. Đo đạc benchmark hiệu năng (FPS, độ trễ ms, MOT metrics). | `testing-verification`<br>`code-review`<br>`documentation` |
+| **Trần Thị Loan** | AI Data Specialist | **Trung bình - Khó** | 1. Tự sinh dữ liệu mô phỏng (Synthetic Data 2.500 frames).<br>2. Gán nhãn Bounding Box và chia tập Train/Val/Test chống rò rỉ dữ liệu.<br>3. Chạy thực nghiệm huấn luyện YOLOv12n (100 Epochs).<br>4. Xuất các bảng số liệu mAP, Loss, PR-Curve. | `yolov12-bytetrack-vision`<br>`requirements-analysis` |
+| **Nguyễn Thị Thu Hà** | IoT & Logistics Logic Dev | **Vừa phải** | 1. Logic phân loại cổng IoT (Sorting Gates 1, 2, 3).<br>2. Cơ chế gán mã bưu chính ảo (Virtual Attribution).<br>3. Cơ chế xử lý hàng lỗi về làn Re-check.<br>4. Xử lý ngoại lệ cảm biến và báo kẹt cổng (Anti-jam alert). | `iot-sorting-control`<br>`fastapi-pro` |
+| **Nguyễn Hồng Vinh**| Frontend & QA Engineer | **Vừa phải** | 1. Kết xuất đồ họa mô phỏng **HTML5 Canvas 2D** mượt mà 60 FPS.<br>2. Xây dựng Dashboard hiển thị KPI và biểu đồ thời gian thực.<br>3. Thực thi và ghi log **35 Test Cases chức năng** (Phụ lục C).<br>4. Đo đạc benchmark hiệu năng (FPS, độ trễ ms, MOT metrics). | `testing-verification`<br>`code-review`<br>`documentation` |
 
 ---
 
@@ -119,3 +119,4 @@ Tệp [`jira_import_backlog.csv`](./jira_import_backlog.csv) đã được chu�
    - `Sprint` $\to$ Sprint
    - `Epic Name` $\to$ Epic Name
 7. Bấm **Begin Import** $\to$ Toàn bộ 26 User Stories, Tasks, Spikes sẽ tự động xuất hiện trên Jira Scrum Board của nhóm!
+
