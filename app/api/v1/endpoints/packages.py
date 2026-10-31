@@ -214,3 +214,135 @@ def list_storage_locations(
 
     return StorageLocationListResponse(total=total, items=items)
 
+
+# ==========================================
+# 3. THUẬT TOÁN GỢI Ý XẾP CHỖ ABC (LOG-118)
+# ==========================================
+
+@router.post("/packages/{package_id}/recommend-slot")
+def recommend_package_slot(
+    package_id: int,
+    turnover_hint: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+    _: User = Depends(get_current_active_user),
+):
+    """
+    Gợi ý ô kệ tối ưu theo phân tích ABC Heuristic (LOG-118):
+    - Tự động phân loại Zone A (Fast), Zone B (Medium), Zone C (Slow).
+    - Tính khoảng cách di chuyển ngắn nhất cho robot AMR.
+    """
+    from app.services.storage_heuristic import storage_heuristic
+
+    pkg = db.execute(select(Package).where(Package.id == package_id)).scalar_one_or_none()
+    if not pkg:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kiện hàng không tồn tại")
+
+    locs = db.execute(select(StorageLocation)).scalars().all()
+    available_locations = [
+        {
+            "id": l.id,
+            "code": l.code,
+            "zone": l.zone,
+            "capacity": l.capacity,
+            "current_count": l.current_count,
+            "is_full": l.is_full,
+        }
+        for l in locs
+    ]
+
+    best_slot = storage_heuristic.recommend_slot(
+        package_weight=pkg.weight,
+        destination_code=pkg.destination_code,
+        available_locations=available_locations,
+        turnover_hint=turnover_hint,
+    )
+
+    if not best_slot:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Kho hàng đã đầy, không còn ô trống!")
+
+    return {
+        "package_id": pkg.id,
+        "barcode": pkg.barcode,
+        "recommended_slot": best_slot,
+    }
+
+
+@router.post("/packages/{package_id}/assign-slot")
+def assign_package_slot(
+    package_id: int,
+    location_id: Optional[int] = Query(default=None),
+    turnover_hint: Optional[str] = Query(default=None),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+):
+    """
+    Gán kiện hàng vào ô kệ tối ưu và điều phối AMR lưu kho (LOG-118).
+    """
+    from app.services.storage_heuristic import storage_heuristic
+
+    pkg = db.execute(select(Package).where(Package.id == package_id)).scalar_one_or_none()
+    if not pkg:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Kiện hàng không tồn tại")
+
+    # Nếu không chỉ định location_id, tự động lấy gợi ý tối ưu
+    target_loc = None
+    if location_id is not None:
+        target_loc = db.execute(select(StorageLocation).where(StorageLocation.id == location_id)).scalar_one_or_none()
+        if not target_loc:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ô kệ không tồn tại")
+        if target_loc.is_full or target_loc.current_count >= target_loc.capacity:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Ô kệ '{target_loc.code}' đã đầy!")
+    else:
+        locs = db.execute(select(StorageLocation)).scalars().all()
+        loc_dicts = [
+            {"id": l.id, "code": l.code, "zone": l.zone, "capacity": l.capacity, "current_count": l.current_count, "is_full": l.is_full}
+            for l in locs
+        ]
+        best = storage_heuristic.recommend_slot(pkg.weight, pkg.destination_code, loc_dicts, turnover_hint)
+        if not best:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Kho hàng đã đầy!")
+        target_loc = db.execute(select(StorageLocation).where(StorageLocation.id == best["id"])).scalar_one_or_none()
+
+    # Trừ số lượng ở vị trí cũ nếu có
+    if pkg.location_id and pkg.location_id != target_loc.id:
+        old_loc = db.execute(select(StorageLocation).where(StorageLocation.id == pkg.location_id)).scalar_one_or_none()
+        if old_loc and old_loc.current_count > 0:
+            old_loc.current_count -= 1
+            old_loc.is_full = False
+
+    # Gán vào ô mới
+    target_loc.current_count += 1
+    if target_loc.current_count >= target_loc.capacity:
+        target_loc.is_full = True
+
+    pkg.location_id = target_loc.id
+    pkg.status = "Stored"
+
+    db.commit()
+    db.refresh(pkg)
+    db.refresh(target_loc)
+
+    # Ghi log kiểm toán
+    log = SystemLog(
+        user_id=current_user.id,
+        action="PACKAGE_ASSIGN_SLOT",
+        details=json.dumps({"package_id": pkg.id, "barcode": pkg.barcode, "location_code": target_loc.code, "zone": target_loc.zone}),
+    )
+    db.add(log)
+    db.commit()
+
+    return {
+        "message": f"Đã gán kiện hàng '{pkg.barcode}' vào ô kệ '{target_loc.code}' ({target_loc.zone})",
+        "package_id": pkg.id,
+        "status": pkg.status,
+        "location": {
+            "id": target_loc.id,
+            "code": target_loc.code,
+            "zone": target_loc.zone,
+            "current_count": target_loc.current_count,
+            "capacity": target_loc.capacity,
+            "is_full": target_loc.is_full,
+        },
+    }
+
+

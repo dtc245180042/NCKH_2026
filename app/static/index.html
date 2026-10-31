@@ -586,11 +586,12 @@
                                 <tr>
                                     <th>Mã Barcode</th>
                                     <th>Khối Lượng</th>
-                                    <th>Kích Thước</th>
                                     <th>Điểm Đến</th>
+                                    <th>Phân Hạng ABC</th>
                                     <th>Cổng Gạt</th>
                                     <th>Trạng Thái</th>
                                     <th>Vị Trí Kệ</th>
+                                    <th>Thao Tác Lưu Kho</th>
                                 </tr>
                             </thead>
                             <tbody id="packages-table-body">
@@ -765,6 +766,33 @@
                     <button type="submit" class="btn-blue-primary">Lưu bưu kiện</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL GỢI Ý XẾP CHỖ ABC (LOG-118) -->
+    <div id="slot-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-window">
+            <div class="modal-head">
+                <div class="modal-title">
+                    <div class="modal-icon" style="background:#eff6ff; color:#2563eb;"><i class="fa-solid fa-cubes"></i></div>
+                    <div>
+                        <h4>Gợi Ý Vị Trí Ô Kệ Tối Ưu (ABC Heuristic)</h4>
+                        <small id="slot-modal-subtitle">Tối ưu quãng đường di chuyển của xe tự hành AMR</small>
+                    </div>
+                </div>
+                <button class="btn-close" id="modal-slot-close-btn">&times;</button>
+            </div>
+
+            <div class="modal-body" id="slot-modal-body">
+                <!-- Nội dung hiển thị gợi ý ô kệ -->
+            </div>
+
+            <div class="modal-foot">
+                <button type="button" class="btn-secondary-light" id="modal-slot-cancel-btn">Đóng</button>
+                <button type="button" class="btn-blue-primary" id="modal-slot-confirm-btn">
+                    <i class="fa-solid fa-check"></i> Xác Nhận Lưu Kho & Điều Phối AMR
+                </button>
+            </div>
         </div>
     </div>
 
