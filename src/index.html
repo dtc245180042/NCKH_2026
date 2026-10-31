@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mô phỏng Kho thông minh 2D Canvas 60 FPS — SV2026-ICTU-08</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header: Thanh tiêu đề hệ thống và telemetry thời gian thực -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="logo-badge">
+          <span class="pulse-indicator"></span>
+          <span class="logo-text">AI LOGISTICS</span>
+        </div>
+        <div class="title-group">
+          <h1>Hệ Thống Truy Vết & Điều Phối Kho Thông Minh</h1>
+          <p class="subtitle">Đề tài SV2026-ICTU-08 &bull; Task LOG-119: Giao diện mô phỏng Canvas 2D 60 FPS</p>
+        </div>
+      </div>
+
+      <div class="header-telemetry">
+        <!-- Badge FPS thời gian thực -->
+        <div class="telemetry-card fps-card" id="fpsBadgeContainer">
+          <div class="telemetry-label">HIỆU NĂNG RENDER</div>
+          <div class="telemetry-value-group">
+            <span class="fps-status-dot" id="fpsDot"></span>
+            <span class="telemetry-value" id="fpsValue">60.0</span>
+            <span class="telemetry-unit">FPS</span>
+          </div>
+          <div class="telemetry-sub" id="frameTimeText">16.6 ms/frame</div>
+        </div>
+
+        <!-- Chỉ số sản lượng & kiện hàng -->
+        <div class="telemetry-card">
+          <div class="telemetry-label">ĐÃ XỬ LÝ (OUTBOUND)</div>
+          <div class="telemetry-value-group">
+            <span class="telemetry-value text-emerald" id="totalSortedCount">0</span>
+            <span class="telemetry-unit">kiện</span>
+          </div>
+          <div class="telemetry-sub" id="throughputRate">Năng suất: ~1.150 kiện/h</div>
+        </div>
+
+        <div class="telemetry-card">
+          <div class="telemetry-label">ĐANG TRÊN BĂNG TẢI</div>
+          <div class="telemetry-value-group">
+            <span class="telemetry-value text-cyan" id="activeParcelsCount">0</span>
+            <span class="telemetry-unit">kiện</span>
+          </div>
+          <div class="telemetry-sub" id="activeTracksText">Active Tracks: 0</div>
+        </div>
+
+        <div class="telemetry-card">
+          <div class="telemetry-label">CỔNG PHÂN LOẠI IoT</div>
+          <div class="telemetry-value-group">
+            <span class="telemetry-value text-amber">4/4</span>
+            <span class="telemetry-unit">Active</span>
+          </div>
+          <div class="telemetry-sub">Góc mở chuẩn: 45&deg;</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Khu vực chính: Canvas mô phỏng & Bảng điều khiển -->
+    <main class="simulation-workspace">
+      <!-- Container bọc Canvas -->
+      <div class="canvas-viewport" id="viewportContainer">
+        <canvas id="simulationCanvas"></canvas>
+
+        <!-- Tooltip khi rê chuột vào kiện hàng -->
+        <div class="parcel-tooltip" id="parcelTooltip">
+          <div class="tooltip-header" id="tooltipId">PKG-0000</div>
+          <div class="tooltip-body">
+            <div class="tooltip-row"><span>ByteTrack ID:</span> <strong id="tooltipTrackId">#0</strong></div>
+            <div class="tooltip-row"><span>Đích đến:</span> <strong id="tooltipDest">Miền Bắc</strong></div>
+            <div class="tooltip-row"><span>Mã bưu chính:</span> <strong id="tooltipZip">100000</strong></div>
+            <div class="tooltip-row"><span>Trọng lượng:</span> <strong id="tooltipWeight">2.5 kg</strong></div>
+            <div class="tooltip-row"><span>Độ tin cậy AI:</span> <strong id="tooltipConf">0.98</strong></div>
+            <div class="tooltip-row"><span>Trạng thái:</span> <strong id="tooltipStatus">Đang chuyển</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bảng điều khiển tác vụ (Floating SCADA Controls) -->
+      <aside class="control-panel">
+        <div class="panel-section">
+          <h3>ĐIỀU KHIỂN MÔ PHỎNG</h3>
+          <div class="control-actions">
+            <button class="btn btn-primary" id="btnPlayPause">
+              <span class="btn-icon" id="playPauseIcon">&#10074;&#10074;</span>
+              <span id="playPauseText">Tạm dừng (Space)</span>
+            </button>
+            <button class="btn btn-secondary" id="btnSpawn">
+              <span class="btn-icon">&#10010;</span>
+              <span>Cấp kiện mới</span>
+            </button>
+            <button class="btn btn-outline" id="btnReset">
+              <span class="btn-icon">&#8635;</span>
+              <span>Đặt lại</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3>TỐC ĐỘ MÔ PHỎNG</h3>
+          <div class="speed-selector">
+            <button class="speed-btn" data-speed="0.5">0.5x</button>
+            <button class="speed-btn active" data-speed="1.0">1.0x (Chuẩn)</button>
+            <button class="speed-btn" data-speed="2.0">2.0x</button>
+            <button class="speed-btn" data-speed="4.0">4.0x</button>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3>LỚP HIỂN THỊ ĐỒ HỌA (LAYERS)</h3>
+          <div class="layer-toggles">
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleAiBoxes" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">YOLO Bounding Box &amp; Track ID</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleTrails" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Tracking Trails (Vệt ByteTrack)</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleSensors" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Vạch cảm biến &amp; Cần gạt 45&deg;</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleGrid" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Lưới điều phối &amp; Ô kệ lưu kho</span>
+            </label>
+            <label class="toggle-item">
+              <input type="checkbox" id="toggleHud" checked>
+              <span class="toggle-slider"></span>
+              <span class="toggle-text">Bộ đếm FPS &amp; Sparkline góc Canvas</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h3>PHÂN BỔ CỔNG XUẤT (ROUTING LANES)</h3>
+          <ul class="lanes-legend">
+            <li><span class="legend-color legend-lane-1"></span> Cổng 1: Miền Bắc (Hà Nội - 100000)</li>
+            <li><span class="legend-color legend-lane-2"></span> Cổng 2: Miền Trung (Đà Nẵng - 550000)</li>
+            <li><span class="legend-color legend-lane-3"></span> Cổng 3: Miền Nam (TP.HCM - 700000)</li>
+            <li><span class="legend-color legend-lane-4"></span> Cổng 4: Quốc tế / Chuyển tiếp (999000)</li>
+          </ul>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Footer: Nhật ký sự kiện Logistics thời gian thực (Event Telemetry Log) -->
+    <footer class="app-footer">
+      <div class="footer-title">
+        <span class="status-pulse"></span>
+        <span>NHẬT KÝ ĐIỀU PHỐI THỜI GIAN THỰC (SCADA EVENT LOG):</span>
+      </div>
+      <div class="log-ticker-container">
+        <div class="log-ticker-content" id="logTicker">
+          <span class="log-item">[HỆ THỐNG] Khởi tạo mô phỏng Canvas 2D 60 FPS thành công.</span>
+          <span class="log-item">[INBOUND] Cổng tiếp nhận hàng sẵn sàng hoạt động.</span>
+          <span class="log-item">[AI VISION] Module YOLOv12n &amp; ByteTrack Kalman 8D đã đồng bộ.</span>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script src="main.js"></script>
+</body>
+</html>
