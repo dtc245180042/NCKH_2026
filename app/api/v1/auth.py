@@ -109,3 +109,4 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db), current_us
 @router.get("/users", response_model=List[UserResponse], summary="Danh sách người dùng (Admin/Operator)")
 def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(User).all()
+

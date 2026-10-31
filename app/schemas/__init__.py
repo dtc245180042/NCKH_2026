@@ -31,3 +31,4 @@ __all__ = [
     "ParcelSnapshot",
     "GateSnapshot",
 ]
+

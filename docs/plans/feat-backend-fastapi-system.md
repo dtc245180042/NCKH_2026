@@ -78,3 +78,4 @@
 - [ ] Kiểm tra tạo bảng CSDL tự động và nạp dữ liệu mẫu ban đầu (Seed data).
 - [ ] Chạy thử nghiệm giải thuật A* tìm đường tránh vật cản với thời gian tính toán $< 10$ ms.
 - [ ] Kiểm tra endpoint WebSocket stream và các REST API endpoints qua test suite.
+

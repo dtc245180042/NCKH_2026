@@ -25,3 +25,4 @@ class TrackingSession(Base):
 
     def __repr__(self):
         return f"<TrackingSession(track_id={self.assigned_track_id}, pkg_id={self.package_id}, conf={self.confidence_score})>"
+

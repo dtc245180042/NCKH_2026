@@ -34,3 +34,4 @@ class SimulationStateSnapshot(BaseModel):
     amr_x: float
     amr_y: float
     throughput_rate_per_hour: int
+

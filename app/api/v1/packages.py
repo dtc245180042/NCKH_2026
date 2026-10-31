@@ -90,3 +90,4 @@ def update_package(package_id: int, pkg_in: PackageUpdate, db: Session = Depends
     db.commit()
     db.refresh(pkg)
     return pkg
+

@@ -35,3 +35,4 @@ class AMRStatus(BaseModel):
     state: str = "PATROLLING"  # "IDLE", "PATROLLING", "NAVIGATING", "BLOCKED"
     battery_percent: float = 95.0
     active_path: List[Point2D] = []
+

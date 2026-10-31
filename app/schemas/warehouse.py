@@ -23,3 +23,4 @@ class StorageLocationResponse(StorageLocationBase):
 
     class Config:
         from_attributes = True
+

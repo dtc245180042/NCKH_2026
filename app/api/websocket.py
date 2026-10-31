@@ -10,7 +10,9 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from app.services.simulation_manager import simulation_manager
 
 logger = logging.getLogger("simulation_ws")
-router = APIRouter()
+ws_router = APIRouter()
+router = ws_router  # Alias đảm bảo tương thích mọi cách import
+__all__ = ["ws_router", "router"]
 
 
 class ConnectionManager:
@@ -39,7 +41,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-@router.websocket("/ws/simulation/stream")
+@ws_router.websocket("/ws/simulation/stream")
 async def simulation_stream(websocket: WebSocket):
     """
     Kênh WebSocket truyền phát trạng thái mô phỏng 60 FPS:
@@ -94,3 +96,4 @@ async def simulation_stream(websocket: WebSocket):
         manager.disconnect(websocket)
     finally:
         receive_task.cancel()
+

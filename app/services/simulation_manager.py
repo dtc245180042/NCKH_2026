@@ -137,3 +137,4 @@ class SimulationManager:
 
 # Singleton session manager
 simulation_manager = SimulationManager()
+

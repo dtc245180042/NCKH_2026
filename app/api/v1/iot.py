@@ -39,3 +39,4 @@ def trigger_gate(req: GateTriggerRequest, db: Session = Depends(get_db)):
 def trigger_anti_jam(gate_number: int, db: Session = Depends(get_db)):
     result = sorting_service.handle_anti_jam_alert(db=db, gate_number=gate_number)
     return result
+

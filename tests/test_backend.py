@@ -180,3 +180,4 @@ class TestIoTSortingService:
         assert service.resolve_target_gate(pkg_south) == 3
         assert service.resolve_target_gate(pkg_intl) == 4
         assert service.resolve_target_gate(pkg_unknown) == 4
+

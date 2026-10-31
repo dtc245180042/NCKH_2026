@@ -189,3 +189,4 @@ class AStarPlanner:
 
 # Instance singleton phục vụ toàn hệ thống
 amr_planner = AStarPlanner(width=50, height=50)
+

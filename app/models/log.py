@@ -23,3 +23,4 @@ class SystemLog(Base):
 
     def __repr__(self):
         return f"<SystemLog(id={self.log_id}, type='{self.event_type}', time='{self.created_at}')>"
+

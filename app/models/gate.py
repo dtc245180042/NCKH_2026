@@ -22,3 +22,4 @@ class SortingGate(Base):
 
     def __repr__(self):
         return f"<SortingGate(gate_number={self.gate_number}, target='{self.target_zone}', status='{self.status}')>"
+

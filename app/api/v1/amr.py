@@ -67,3 +67,4 @@ def get_amr_status():
             {"x": 950, "y": 200}
         ]
     }
+

@@ -67,3 +67,4 @@ def occupy_location(location_id: int, package_id: int, db: Session = Depends(get
         "location_code": loc.location_code,
         "package_barcode": pkg.barcode
     }
+

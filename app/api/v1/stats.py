@@ -69,3 +69,4 @@ def get_recent_logs(limit: int = 20, db: Session = Depends(get_db)) -> List[Dict
         }
         for l in logs
     ]
+

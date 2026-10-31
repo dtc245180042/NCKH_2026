@@ -33,3 +33,4 @@ class Package(Base):
 
     def __repr__(self):
         return f"<Package(id={self.package_id}, barcode='{self.barcode}', dest='{self.destination_zone}', status='{self.status}')>"
+

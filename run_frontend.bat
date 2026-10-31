@@ -13,4 +13,4 @@ echo  - Bam Space de Tam dung / Tiep tuc
 echo  - Bam "Cap kien moi" de them buu kien
 echo  - Chinh toc do 0.5x, 1x, 2x, 4x
 echo.
-pause
+timeout /t 3 > nul

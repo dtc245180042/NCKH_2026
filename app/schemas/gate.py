@@ -26,3 +26,4 @@ class SortingGateResponse(SortingGateBase):
 
     class Config:
         from_attributes = True
+

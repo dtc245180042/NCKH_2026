@@ -42,3 +42,4 @@ class PackageResponse(PackageBase):
 
     class Config:
         from_attributes = True
+

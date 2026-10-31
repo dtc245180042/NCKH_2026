@@ -18,3 +18,4 @@ api_v1_router.include_router(iot_router, prefix="/iot", tags=["5. Cổng phân l
 api_v1_router.include_router(stats_router, prefix="/stats", tags=["6. Thống kê & Báo cáo Năng suất (UC-11)"])
 
 __all__ = ["api_v1_router"]
+

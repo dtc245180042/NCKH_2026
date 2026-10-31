@@ -23,3 +23,4 @@ class StorageLocation(Base):
 
     def __repr__(self):
         return f"<StorageLocation(code='{self.location_code}', zone='{self.zone}', occupied={self.is_occupied})>"
+

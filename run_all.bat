@@ -20,3 +20,4 @@ if %errorlevel% equ 0 (
 start "" "%~dp0src\index.html"
 echo [HOAN TAT] Giao dien mo phong da duoc khoi chay tren trinh duyet!
 pause
+
