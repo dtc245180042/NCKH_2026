@@ -1,11 +1,31 @@
 """
-Security module: Password hashing (bcrypt) and JWT Token handling.
+Security module: Password hashing (bcrypt), JWT Token handling, and Password Strength Validation.
+Tuân thủ tiêu chuẩn an toàn thông tin và kiểm toán mã nguồn (LOG-124).
 """
 from datetime import datetime, timedelta
-from typing import Any, Union, Optional
+from typing import Any, Union, Optional, Tuple
 import hashlib
 import hmac
+import re
 from app.core.config import settings
+
+# Danh sách đen các mật khẩu mặc định/quá yếu bị cấm tuyệt đối
+WEAK_PASSWORD_BLACKLIST = {
+    "123456",
+    "12345678",
+    "123456789",
+    "password",
+    "admin",
+    "admin123",
+    "admin@123",
+    "operator123",
+    "viewer123",
+    "qwerty",
+    "letmein",
+    "welcome",
+    "root",
+    "guest"
+}
 
 # Thử import passlib và jose, nếu chưa cài đặt thì fallback an toàn dùng SHA256 HMAC
 try:
@@ -21,6 +41,43 @@ try:
     HAS_JOSE = True
 except ImportError:
     HAS_JOSE = False
+
+
+def validate_password_strength(password: str) -> Tuple[bool, str]:
+    """
+    Thẩm định độ mạnh của mật khẩu theo chuẩn bảo mật:
+    - Độ dài tối thiểu 8 ký tự
+    - Bắt buộc chứa chữ hoa, chữ thường, chữ số
+    - Chứa ít nhất một ký tự đặc biệt (@$!%*?&#...)
+    - Tuyệt đối không trùng với danh sách mật khẩu yếu/mặc định phổ biến
+    """
+    if not password:
+        return False, "Mật khẩu không được để trống."
+
+    if len(password) < 8:
+        return False, f"Mật khẩu quá ngắn ({len(password)} ký tự). Yêu cầu độ dài tối thiểu 8 ký tự."
+
+    if password.lower() in WEAK_PASSWORD_BLACKLIST:
+        return False, "Mật khẩu quá phổ biến hoặc thuộc danh sách mật khẩu yếu mặc định bị cấm."
+
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    has_special = bool(re.search(r"[!@#$%^&*(),.?\":{}|<>\-_=+[\]/\\]", password))
+
+    if not has_lower:
+        return False, "Mật khẩu phải chứa ít nhất 1 chữ cái viết thường (a-z)."
+
+    if not has_upper:
+        return False, "Mật khẩu phải chứa ít nhất 1 chữ cái viết hoa (A-Z)."
+
+    if not has_digit:
+        return False, "Mật khẩu phải chứa ít nhất 1 chữ số (0-9)."
+
+    if not has_special:
+        return False, "Mật khẩu phải chứa ít nhất 1 ký tự đặc biệt (!@#$%^&*...)."
+
+    return True, "Mật khẩu đạt tiêu chuẩn an toàn mạnh."
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -41,7 +98,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def get_password_hash(password: str) -> str:
-    """Tạo chuỗi băm mật khẩu bảo mật"""
+    """Tạo chuỗi băm mật khẩu bảo mật (bcrypt hoặc HMAC-SHA256)"""
     if HAS_PASSLIB and pwd_context:
         try:
             return pwd_context.hash(password)
@@ -59,16 +116,17 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(subject: Union[str, Any], role: str = "OPERATOR", expires_delta: Optional[timedelta] = None) -> str:
     """Sinh JWT Access Token mang thông tin user_id và role RBAC"""
+    now = datetime.utcnow()
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = now + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
 
     to_encode = {
         "exp": expire,
         "sub": str(subject),
         "role": role,
-        "iat": datetime.utcnow()
+        "iat": now
     }
 
     if HAS_JOSE:
@@ -117,4 +175,3 @@ def decode_access_token(token: str) -> Optional[dict]:
             return payload
         except Exception:
             return None
-

@@ -1,6 +1,7 @@
 """
 Database connection, engine, sessionmaker and seed initialization.
 Supports SQLite and PostgreSQL via SQLAlchemy 2.0.
+Tuân thủ tiêu chuẩn an toàn bảo mật và khởi tạo nhân sự (LOG-124).
 """
 from datetime import datetime
 from sqlalchemy import create_engine
@@ -40,25 +41,25 @@ def init_db():
 
     db: Session = SessionLocal()
     try:
-        # 1. Khởi tạo người dùng mẫu (RBAC)
+        # 1. Khởi tạo người dùng mẫu (RBAC) với mật khẩu mạnh bảo mật (LOG-124)
         if db.query(User).count() == 0:
             admin_user = User(
                 username="admin",
-                hashed_password=get_password_hash("admin123"),
+                hashed_password=get_password_hash(settings.INITIAL_ADMIN_PASSWORD),
                 full_name="Nguyễn Văn Toàn (Quản trị viên)",
                 role="ADMIN",
                 is_active=True
             )
             op_user = User(
                 username="operator",
-                hashed_password=get_password_hash("operator123"),
-                full_name="Bùi Duy Hà (Vận hành kho)",
+                hashed_password=get_password_hash(settings.INITIAL_OPERATOR_PASSWORD),
+                full_name="Nguyễn Thị Thu Hà (Vận hành kho)",
                 role="OPERATOR",
                 is_active=True
             )
             viewer_user = User(
                 username="viewer",
-                hashed_password=get_password_hash("viewer123"),
+                hashed_password=get_password_hash(settings.INITIAL_VIEWER_PASSWORD),
                 full_name="Khách tham quan / Giám sát",
                 role="VIEWER",
                 is_active=True
@@ -133,7 +134,7 @@ def init_db():
         if db.query(SystemLog).count() == 0:
             sys_log = SystemLog(
                 event_type="SYSTEM_INIT",
-                description="Hệ thống CSDL Logistics 3NF khởi tạo thành công (SV2026-ICTU-08).",
+                description="Hệ thống CSDL Logistics 3NF khởi tạo thành công với tài khoản bảo mật (SV2026-ICTU-08).",
                 user_id=1
             )
             db.add(sys_log)

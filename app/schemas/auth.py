@@ -1,5 +1,6 @@
 """
 Pydantic v2 schemas: Authentication & User management (UC-01 & UC-02)
+Tuân thủ tiêu chuẩn an toàn bảo mật mật khẩu (LOG-124)
 """
 from datetime import datetime
 from typing import Optional
@@ -22,7 +23,7 @@ class TokenPayload(BaseModel):
 
 class LoginRequest(BaseModel):
     username: str = Field(..., example="admin")
-    password: str = Field(..., example="admin123")
+    password: str = Field(..., example="Admin@ICTU2026!Secure")
 
 
 class UserBase(BaseModel):
@@ -33,7 +34,12 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6)
+    password: str = Field(
+        ...,
+        min_length=8,
+        description="Mật khẩu bảo mật tối thiểu 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt",
+        example="StrongPass@2026!"
+    )
 
 
 class UserUpdate(BaseModel):
@@ -49,4 +55,3 @@ class UserResponse(UserBase):
 
     class Config:
         from_attributes = True
-

@@ -1,9 +1,15 @@
 """
 Core configuration and application settings.
+Tuân thủ tiêu chuẩn an toàn thông tin và bảo mật môi trường.
 """
 from typing import List, Union
-from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, validator
+
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic import BaseModel as BaseSettings
+
+from pydantic import AnyHttpUrl
 
 
 class Settings(BaseSettings):
@@ -11,11 +17,17 @@ class Settings(BaseSettings):
     PROJECT_CODE: str = "SV2026-ICTU-08"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
+    ENVIRONMENT: str = "development"
 
-    # Security & JWT
+    # Security & JWT Token
     SECRET_KEY: str = "super-secret-jwt-token-key-sv2026-ictu-logistics-change-in-prod"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 1 ngày
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 8  # 8 giờ (chuẩn ca làm việc kho)
     ALGORITHM: str = "HS256"
+
+    # Khởi tạo mật khẩu mạnh ban đầu (loại bỏ mật khẩu yếu mặc định)
+    INITIAL_ADMIN_PASSWORD: str = "Admin@ICTU2026!Secure"
+    INITIAL_OPERATOR_PASSWORD: str = "Operator@ICTU2026!Secure"
+    INITIAL_VIEWER_PASSWORD: str = "Viewer@ICTU2026!Secure"
 
     # Database
     DATABASE_URL: str = "sqlite:///./logistics.db"
@@ -31,6 +43,11 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = True
 
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT.lower() == "production"
+
+    def is_secret_key_default(self) -> bool:
+        return "change-in-prod" in self.SECRET_KEY or "super-secret" in self.SECRET_KEY
+
 
 settings = Settings()
-

@@ -1,5 +1,6 @@
 """
 API v1 Router: Authentication & RBAC (UC-01 & UC-02)
+Tuân thủ tiêu chuẩn an toàn bảo mật và kiểm định mật khẩu (LOG-124)
 """
 from datetime import timedelta
 from typing import List
@@ -9,7 +10,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.security import verify_password, get_password_hash, create_access_token, decode_access_token
+from app.core.security import (
+    verify_password,
+    get_password_hash,
+    create_access_token,
+    decode_access_token,
+    validate_password_strength,
+)
 from app.models import User, SystemLog
 from app.schemas import Token, LoginRequest, UserCreate, UserResponse
 
@@ -31,6 +38,13 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if not user or not user.is_active:
         raise HTTPException(status_code=400, detail="Tài khoản không tồn tại hoặc đã bị khóa")
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Chặn quyền: Chỉ ADMIN mới được thực thi"""
+    if current_user.role != "ADMIN":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Yêu cầu quyền Quản trị viên (ADMIN).")
+    return current_user
 
 
 @router.post("/login", response_model=Token, summary="Đăng nhập hệ thống cấp JWT Token")
@@ -85,10 +99,24 @@ def read_current_user(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/register", response_model=UserResponse, summary="Tạo mới tài khoản người dùng (Admin only)")
-def register_user(user_in: UserCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    if current_user.role != "ADMIN":
-        raise HTTPException(status_code=403, detail="Chỉ Quản trị viên (ADMIN) mới có quyền tạo tài khoản.")
+def register_user(
+    user_in: UserCreate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin)
+):
+    """
+    Tạo tài khoản người dùng mới (chỉ ADMIN).
+    Thực hiện thẩm định độ mạnh mật khẩu bắt buộc theo chuẩn an toàn (LOG-124).
+    """
+    # 1. Thẩm định độ mạnh mật khẩu
+    is_strong, msg = validate_password_strength(user_in.password)
+    if not is_strong:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Mật khẩu không đạt tiêu chuẩn an toàn: {msg}"
+        )
 
+    # 2. Kiểm tra trùng lặp username
     existing = db.query(User).filter(User.username == user_in.username).first()
     if existing:
         raise HTTPException(status_code=400, detail="Tên người dùng đã tồn tại.")
@@ -109,4 +137,3 @@ def register_user(user_in: UserCreate, db: Session = Depends(get_db), current_us
 @router.get("/users", response_model=List[UserResponse], summary="Danh sách người dùng (Admin/Operator)")
 def list_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(User).all()
-
