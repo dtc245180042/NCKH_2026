@@ -148,30 +148,43 @@ class WarehouseSimulationEnvironment:
         self,
         w: int, h: int,
         placed_boxes: List[Tuple[int, int, int, int]],
-        max_attempts: int = 30
-    ) -> Optional[Tuple[int, int, int, int]]:
+        max_attempts: int = 40,
+        can_be_on_shelf: bool = True
+    ) -> Tuple[int, int, int, int]:
         """
-        Tìm vị trí ngẫu nhiên không đè lên shelf và đối tượng đã vẽ.
-        Trả về (x1, y1, x2, y2) hoặc None nếu không tìm được.
+        Tìm vị trí cho đối tượng trong kho. Đảm bảo luôn trả về vị trí hợp lệ
+        để không làm thất thoát instance so với bảng đăng ký.
         """
+        from .utils import compute_iou
+        best_box = None
+        min_overlap = float("inf")
+
         for _ in range(max_attempts):
-            x1 = self.rng.randint(5, IMG_W - w - 5)
-            y1 = self.rng.randint(5, IMG_H - h - 5)
+            x1 = self.rng.randint(5, max(6, IMG_W - w - 5))
+            y1 = self.rng.randint(5, max(6, IMG_H - h - 5))
             x2, y2 = x1 + w, y1 + h
             box = (x1, y1, x2, y2)
 
-            # Không đặt trong kệ
-            on_shelf = any(
-                x1 < s.x2 and x2 > s.x1 and y1 < s.y2 and y2 > s.y1
-                for s in self._shelves
-            )
-            if on_shelf:
-                continue
+            if not can_be_on_shelf:
+                on_shelf = any(
+                    x1 < s.x2 and x2 > s.x1 and y1 < s.y2 and y2 > s.y1
+                    for s in self._shelves
+                )
+                if on_shelf:
+                    continue
 
-            if not self._is_overlapping(box, placed_boxes):
+            overlap_score = sum(compute_iou(box, b) for b in placed_boxes)
+            if overlap_score < 0.20:
                 return box
+            if overlap_score < min_overlap:
+                min_overlap = overlap_score
+                best_box = box
 
-        return None  # Không tìm được vị trí hợp lệ
+        if best_box is not None:
+            return best_box
+        x1 = self.rng.randint(5, max(6, IMG_W - w - 5))
+        y1 = self.rng.randint(5, max(6, IMG_H - h - 5))
+        return (x1, y1, x1 + w, y1 + h)
 
     def _draw_package(
         self, draw: ImageDraw.ImageDraw, box: Tuple[int, int, int, int]
@@ -292,10 +305,11 @@ class WarehouseSimulationEnvironment:
                 obj_w = self.rng.randint(*cls_cfg["size_range_w"])
                 obj_h = self.rng.randint(*cls_cfg["size_range_h"])
 
-                box = self._find_free_position(obj_w, obj_h, placed_boxes)
-                if box is None:
-                    # Không đặt được — bỏ qua (hiếm xảy ra với kho 640×640)
-                    continue
+                # Package và pallet có thể ở kệ, xe và người ưu tiên lối đi
+                box = self._find_free_position(
+                    obj_w, obj_h, placed_boxes,
+                    can_be_on_shelf=(cls_name in ("package", "pallet"))
+                )
 
                 # Vẽ đối tượng
                 draw_funcs[cls_name](draw, box)
