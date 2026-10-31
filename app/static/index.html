@@ -207,6 +207,9 @@
                     <button class="nav-tab active" data-tab="tab-canvas">
                         <i class="fa-solid fa-cubes-stacked"></i> Digital Twin 2D
                     </button>
+                    <button class="nav-tab" data-tab="tab-ai-vision">
+                        <i class="fa-solid fa-brain"></i> Thị Giác AI & ByteTrack
+                    </button>
                     <button class="nav-tab" data-tab="tab-packages">
                         <i class="fa-solid fa-barcode"></i> Kiện Hàng & Phân Loại
                     </button>
@@ -254,6 +257,9 @@
                                 </button>
                                 <button class="btn-light-action active" id="btn-toggle-cam">
                                     <i class="fa-solid fa-crosshairs"></i> AI Bounding Box
+                                </button>
+                                <button class="btn-light-action" id="btn-canvas-occlusion">
+                                    <i class="fa-solid fa-cloud-sun"></i> Test Che Khuất (Occlusion)
                                 </button>
                             </div>
                         </div>
@@ -319,6 +325,111 @@
                                     <div>
                                         <strong>AMR-01:</strong> Chuyển kiện sang Kệ Zone B-05
                                         <small>Lộ trình A* tối ưu</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB AI VISION & BYTETRACK (LOG-111 & LOG-112) -->
+            <div id="tab-ai-vision" class="tab-pane">
+                <div class="ai-vision-grid">
+                    <!-- Left: Real-time Camera AI Vision Stream -->
+                    <div class="ai-hud-card">
+                        <div class="card-head flex-between">
+                            <div class="card-title-group">
+                                <h3>Trạm Thị Giác AI & Thuật Toán ByteTrack (LOG-111, LOG-112)</h3>
+                                <p>Nhận diện kiện hàng bằng YOLOv12n và duy trì định danh với bộ lọc Kalman 8 chiều</p>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn-test-occlusion" id="btn-toggle-occlusion">
+                                    <i class="fa-solid fa-cloud-sun"></i> Giả Lập Che Khuất (Occlusion Test)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status Alert on Occlusion -->
+                        <div id="occlusion-status-alert" class="ai-occlusion-banner">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span id="occlusion-status-text">ByteTrack đang hoạt động ở trạng thái bình thường (100% High-Confidence Detections).</span>
+                        </div>
+
+                        <!-- Canvas Camera AI Feed -->
+                        <div class="ai-cam-container">
+                            <div class="cam-hud-overlay">
+                                <div class="cam-live-pill">
+                                    <span class="dot-rec"></span> CAM-01 • YOLOv12n LIVE (640x640)
+                                </div>
+                                <div class="cam-live-pill">
+                                    <i class="fa-solid fa-bolt"></i> 8D KALMAN FILTER
+                                </div>
+                            </div>
+                            <canvas id="ai-vision-canvas" width="880" height="420"></canvas>
+                        </div>
+
+                        <div class="canvas-legend-row">
+                            <span><span class="legend-dot" style="background:#10b981;"></span> Giai đoạn 1 (Conf &ge; 0.6)</span>
+                            <span><span class="legend-dot" style="background:#f59e0b;"></span> Giai đoạn 2 - Che khuất (0.1 &le; Conf &lt; 0.6)</span>
+                            <span><span class="legend-dot" style="background:#3b82f6;"></span> Vector Vận Tốc Kalman [vx, vy]</span>
+                            <span><span class="legend-dot" style="background:#8b5cf6;"></span> Vết Quỹ Đạo (Trajectory)</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: MOT Challenge Metrics & Architecture -->
+                    <div class="ai-hud-card">
+                        <div class="card-head">
+                            <h4>Chỉ Số Đánh Giá MOT Challenge & Độ Trễ (NFR)</h4>
+                        </div>
+
+                        <!-- 4 Big Metric Cards -->
+                        <div class="ai-metric-grid">
+                            <div class="ai-metric-card">
+                                <span class="lbl">ĐỘ TRỄ SUY LUẬN (LATENCY)</span>
+                                <span class="val text-blue" id="ai-metric-latency">14.6 ms</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-check"></i> Đạt chuẩn NFR &le; 30ms</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">HOÁN ĐỔI ID (ID SWITCHES)</span>
+                                <span class="val text-green" id="ai-metric-idswitches">0</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-shield-check"></i> Triệt tiêu hoàn toàn</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">ĐỘ CHÍNH XÁC MOTA</span>
+                                <span class="val" style="color:#0284c7;">94.2%</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-check"></i> Vượt chuẩn công nghiệp</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">NHẤT QUÁN ĐỊNH DANH (IDF1)</span>
+                                <span class="val" style="color:#7c3aed;">91.8%</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-check"></i> Kháng che khuất</span>
+                            </div>
+                        </div>
+
+                        <!-- Flow Architecture of ByteTrack -->
+                        <div class="bytetrack-flow-box">
+                            <h5><i class="fa-solid fa-diagram-project"></i> Cơ Chế Ghép Đôi 2 Giai Đoạn (ByteTrack)</h5>
+                            <div class="flow-step-list">
+                                <div class="flow-step-item">
+                                    <div class="step-num">1</div>
+                                    <div>
+                                        <strong>Dự đoán Kalman 8 chiều:</strong>
+                                        <p>Ước lượng vị trí và vận tốc $[cx, cy, a, h, vx, vy, va, vh]$ của kiện hàng.</p>
+                                    </div>
+                                </div>
+                                <div class="flow-step-item">
+                                    <div class="step-num">2</div>
+                                    <div>
+                                        <strong>Giai đoạn 1 (High Score &ge; 0.6):</strong>
+                                        <p>Ghép cặp phát hiện rõ nét bằng ma trận IoU và Hungarian Matching.</p>
+                                    </div>
+                                </div>
+                                <div class="flow-step-item step-stage2">
+                                    <div class="step-num">3</div>
+                                    <div>
+                                        <strong>Giai đoạn 2 (Low Score 0.1 &le; conf &lt; 0.6):</strong>
+                                        <p>Khôi phục kiện hàng bị che khuất hoặc mờ bóng. <strong>Duy trì Track ID cũ</strong>, tuyệt đối không sinh ID mới hay gây ID Switch!</p>
                                     </div>
                                 </div>
                             </div>

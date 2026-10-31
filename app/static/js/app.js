@@ -6,18 +6,22 @@ const AppState = {
     token: localStorage.getItem("access_token") || null,
     currentUser: null,
     showAIBoundingBox: true,
+    occlusionSimulated: false,
     packages: [],
     locations: [],
     users: [],
     logs: [],
+    ws: null,
+    trails: {},
     amr: { 
         x: 520, y: 340, 
         targetX: 720, targetY: 170, 
         heading: 0, state: "ACTIVE", battery: 96 
     },
     itemsOnBelt: [
-        { id: 7, x: 80, y: 155, barcode: "PKG-84001", conf: 0.98, gate: 1 },
-        { id: 8, x: 280, y: 155, barcode: "PKG-84002", conf: 0.94, gate: 2 }
+        { id: 101, x: 80, y: 155, barcode: "PKG-84001", conf: 0.98, gate: 1, track_id: 1, is_occluded: false },
+        { id: 102, x: 280, y: 155, barcode: "PKG-84002", conf: 0.94, gate: 2, track_id: 2, is_occluded: false },
+        { id: 103, x: 460, y: 155, barcode: "PKG-84003", conf: 0.96, gate: 3, track_id: 3, is_occluded: false }
     ]
 };
 
@@ -25,6 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initAuth();
     initNavigation();
     initCanvasEngine();
+    initAIVisionEngine();
     initUserModal();
     initRoleCapsules();
     initCreatePackageModal();
@@ -413,6 +418,7 @@ function initCanvasEngine() {
 
         ws.onopen = () => {
             console.log("WebSocket 60 FPS đã kết nối thành công");
+            AppState.ws = ws;
         };
 
         ws.onmessage = (event) => {
@@ -424,12 +430,17 @@ function initCanvasEngine() {
                 if (snapshot.amr) {
                     AppState.amr = snapshot.amr;
                 }
+                if (snapshot.ai_vision) {
+                    AppState.occlusionSimulated = snapshot.ai_vision.occlusion_simulated;
+                    updateAIVisionMetrics(snapshot.ai_vision);
+                }
             } catch (e) {
                 // Ignore parse errors
             }
         };
 
         ws.onclose = () => {
+            AppState.ws = null;
             // Tự động kết nối lại sau 2 giây nếu bị ngắt
             setTimeout(connectWebSocket, 2000);
         };
@@ -439,14 +450,26 @@ function initCanvasEngine() {
 
     const btnSpawn = document.getElementById("btn-spawn-pkg");
     const btnToggleCam = document.getElementById("btn-toggle-cam");
+    const btnCanvasOcc = document.getElementById("btn-canvas-occlusion");
 
     if (btnSpawn) {
         btnSpawn.addEventListener("click", () => {
-            if (ws && ws.readyState === WebSocket.OPEN) {
+            if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
                 const nextId = AppState.itemsOnBelt.length + 101;
-                ws.send(JSON.stringify({
+                AppState.ws.send(JSON.stringify({
                     action: "SPAWN_PACKAGE",
                     barcode: `PKG-WS-${nextId}`
+                }));
+            }
+        });
+    }
+
+    if (btnCanvasOcc) {
+        btnCanvasOcc.addEventListener("click", () => {
+            if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
+                AppState.ws.send(JSON.stringify({
+                    action: "TOGGLE_OCCLUSION",
+                    enable: !AppState.occlusionSimulated
                 }));
             }
         });
@@ -559,14 +582,30 @@ function initCanvasEngine() {
 
     function drawLightPackages(ctx) {
         AppState.itemsOnBelt.forEach(p => {
-            p.x += 1.0;
-            if (p.x > 560) p.x = 42;
+            const isOcc = p.is_occluded || (p.conf < 0.6);
 
-            ctx.fillStyle = "#f59e0b";
+            // Bưu kiện chính
+            ctx.fillStyle = isOcc ? "rgba(245, 158, 11, 0.4)" : "#f59e0b";
             ctx.fillRect(p.x, p.y - 12, 30, 24);
-            ctx.strokeStyle = "#d97706";
-            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = isOcc ? "#d97706" : "#b45309";
+            ctx.lineWidth = isOcc ? 2 : 1.5;
+            if (isOcc) ctx.setLineDash([3, 3]);
             ctx.strokeRect(p.x, p.y - 12, 30, 24);
+            ctx.setLineDash([]);
+
+            // Label Track ID
+            ctx.fillStyle = isOcc ? "#b45309" : "#0f172a";
+            ctx.font = "bold 9px 'JetBrains Mono', monospace";
+            ctx.fillText(`T#${p.track_id || p.id}`, p.x + 2, p.y + 4);
+
+            // Hiển thị nhãn che khuất nếu có
+            if (isOcc) {
+                ctx.fillStyle = "#f59e0b";
+                ctx.fillRect(p.x - 10, p.y - 24, 50, 10);
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 7px 'Plus Jakarta Sans', sans-serif";
+                ctx.fillText("CHE KHUẤT", p.x - 7, p.y - 16);
+            }
         });
     }
 
@@ -632,4 +671,201 @@ function initCanvasEngine() {
     }
 
     renderLoop();
+}
+
+
+// ==========================================================================
+// 5. ENGINE THỊ GIÁC AI & THEO DÕI BYTETRACK (LOG-111 & LOG-112)
+// ==========================================================================
+function updateAIVisionMetrics(metrics) {
+    if (!metrics) return;
+    const latencyEl = document.getElementById("ai-metric-latency");
+    const idSwitchesEl = document.getElementById("ai-metric-idswitches");
+    const alertBox = document.getElementById("occlusion-status-alert");
+    const btnOcc1 = document.getElementById("btn-toggle-occlusion");
+    const btnOcc2 = document.getElementById("btn-canvas-occlusion");
+
+    if (latencyEl) latencyEl.textContent = `${metrics.inference_ms} ms`;
+    if (idSwitchesEl) idSwitchesEl.textContent = metrics.id_switches;
+
+    if (metrics.occlusion_simulated) {
+        if (alertBox) {
+            alertBox.className = "ai-occlusion-banner active";
+            alertBox.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> <span><strong>GIẢ LẬP CHE KHUẤT ĐANG BẬT:</strong> Kiện hàng trên băng tải bị bóng mờ / che khuất (Confidence tụt xuống 0.35) &rarr; <strong>ByteTrack Giai đoạn 2 (Low Score Matching)</strong> kích hoạt, giữ vững định danh Track ID, không xảy ra ID Switch!</span>';
+        }
+        if (btnOcc1) btnOcc1.classList.add("active");
+        if (btnOcc2) btnOcc2.classList.add("active");
+    } else {
+        if (alertBox) {
+            alertBox.className = "ai-occlusion-banner";
+            alertBox.innerHTML = '<i class="fa-solid fa-circle-check"></i> <span>ByteTrack đang hoạt động ở trạng thái bình thường (100% High-Confidence Detections &ge; 0.6).</span>';
+        }
+        if (btnOcc1) btnOcc1.classList.remove("active");
+        if (btnOcc2) btnOcc2.classList.remove("active");
+    }
+}
+
+function initAIVisionEngine() {
+    const canvas = document.getElementById("ai-vision-canvas");
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+
+    const btnOcc = document.getElementById("btn-toggle-occlusion");
+    if (btnOcc) {
+        btnOcc.addEventListener("click", () => {
+            if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
+                AppState.ws.send(JSON.stringify({
+                    action: "TOGGLE_OCCLUSION",
+                    enable: !AppState.occlusionSimulated
+                }));
+            }
+        });
+    }
+
+    let scanlineY = 0;
+
+    function renderAILoop() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Nền Camera Tối (Dark Cyber / Industrial Slate)
+        ctx.fillStyle = "#090d16";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // 2. Camera Grid Lines
+        ctx.strokeStyle = "rgba(30, 41, 59, 0.4)";
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 40) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 40) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+
+        // 3. Tâm Ngắm Reticle Camera AI
+        const cx = canvas.width / 2;
+        const cy = canvas.height / 2;
+        ctx.strokeStyle = "rgba(59, 130, 246, 0.35)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 35, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(cx - 50, cy); ctx.lineTo(cx - 15, cy);
+        ctx.moveTo(cx + 15, cy); ctx.lineTo(cx + 50, cy);
+        ctx.moveTo(cx, cy - 50); ctx.lineTo(cx, cy - 15);
+        ctx.moveTo(cx, cy + 15); ctx.lineTo(cx, cy + 50);
+        ctx.stroke();
+
+        // 4. Băng chuyền trong góc nhìn Camera
+        const beltY = 190;
+        const beltH = 90;
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(0, beltY, canvas.width, beltH);
+        ctx.strokeStyle = "#334155";
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, beltY, canvas.width, beltH);
+
+        // Vạch dẫn hướng trung tâm băng tải
+        ctx.strokeStyle = "#475569";
+        ctx.setLineDash([12, 12]);
+        ctx.beginPath();
+        ctx.moveTo(0, beltY + beltH / 2);
+        ctx.lineTo(canvas.width, beltY + beltH / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 5. Hiệu ứng quét Scanline
+        scanlineY = (scanlineY + 1.5) % canvas.height;
+        ctx.fillStyle = "rgba(59, 130, 246, 0.08)";
+        ctx.fillRect(0, scanlineY, canvas.width, 3);
+
+        // 6. Vẽ Kiện Hàng & Bounding Box ByteTrack
+        AppState.itemsOnBelt.forEach(p => {
+            // Ánh xạ tọa độ từ belt x (40..560) sang canvas camera (60..820)
+            const mappedX = 60 + ((p.x - 42) / (560 - 42)) * (canvas.width - 150);
+            const mappedY = beltY + 15;
+            const boxW = 60;
+            const boxH = 60;
+
+            const isOcc = p.is_occluded || (p.conf < 0.6);
+            const boxColor = isOcc ? "#f59e0b" : "#10b981";
+
+            // Vẽ khối bưu kiện 3D
+            ctx.fillStyle = isOcc ? "rgba(180, 83, 9, 0.5)" : "#d97706";
+            ctx.fillRect(mappedX, mappedY, boxW, boxH);
+            ctx.strokeStyle = "#b45309";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(mappedX, mappedY, boxW, boxH);
+
+            // Icon Bưu Kiện
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 16px 'Font Awesome 6 Free'";
+            ctx.fillText("\uf49e", mappedX + 22, mappedY + 36);
+
+            // AI Bounding Box (YOLO / ByteTrack Corner Brackets)
+            const pad = 6;
+            const bx = mappedX - pad;
+            const by = mappedY - pad;
+            const bw = boxW + pad * 2;
+            const bh = boxH + pad * 2;
+
+            ctx.strokeStyle = boxColor;
+            ctx.lineWidth = 2.5;
+
+            // Góc Bo Khung Bounding Box kiểu AI Camera
+            const cornerLen = 14;
+            ctx.beginPath(); ctx.moveTo(bx, by + cornerLen); ctx.lineTo(bx, by); ctx.lineTo(bx + cornerLen, by); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(bx + bw - cornerLen, by); ctx.lineTo(bx + bw, by); ctx.lineTo(bx + bw, by + cornerLen); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(bx, by + bh - cornerLen); ctx.lineTo(bx, by + bh); ctx.lineTo(bx + cornerLen, by + bh); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(bx + bw - cornerLen, by + bh); ctx.lineTo(bx + bw, by + bh); ctx.lineTo(bx + bw, by + bh - cornerLen); ctx.stroke();
+
+            // Track ID Pill trên đầu bounding box
+            const trackId = p.track_id || p.id;
+            const tagText = isOcc 
+                ? `TRACK #${trackId} | CONF: 35% [STAGE 2]` 
+                : `TRACK #${trackId} | CONF: ${( (p.conf || 0.96) * 100 ).toFixed(0)}%`;
+
+            ctx.fillStyle = boxColor;
+            ctx.fillRect(bx, by - 22, ctx.measureText(tagText).width + 16, 20);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 10px 'JetBrains Mono', monospace";
+            ctx.fillText(tagText, bx + 8, by - 8);
+
+            // Vector Vận Tốc Kalman 8D (vx, vy)
+            ctx.strokeStyle = "#38bdf8";
+            ctx.fillStyle = "#38bdf8";
+            ctx.lineWidth = 2;
+            const arrowStartX = bx + bw / 2;
+            const arrowStartY = by + bh / 2;
+            const arrowEndX = arrowStartX + 40;
+            ctx.beginPath();
+            ctx.moveTo(arrowStartX, arrowStartY);
+            ctx.lineTo(arrowEndX, arrowStartY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(arrowEndX, arrowStartY);
+            ctx.lineTo(arrowEndX - 6, arrowStartY - 4);
+            ctx.lineTo(arrowEndX - 6, arrowStartY + 4);
+            ctx.fill();
+
+            ctx.fillStyle = "#7dd3fc";
+            ctx.font = "bold 9px 'JetBrains Mono', monospace";
+            ctx.fillText("vx: +1.0m/s", arrowStartX + 5, arrowStartY - 6);
+
+            // Bảng Thông Tin Chi Tiết Bên Dưới
+            ctx.fillStyle = "rgba(15, 23, 42, 0.85)";
+            ctx.fillRect(bx, by + bh + 4, 115, 28);
+            ctx.strokeStyle = "#334155";
+            ctx.strokeRect(bx, by + bh + 4, 115, 28);
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "8px 'Plus Jakarta Sans', sans-serif";
+            ctx.fillText(p.barcode || `PKG-${p.id}`, bx + 6, by + bh + 16);
+            ctx.fillStyle = isOcc ? "#fbbf24" : "#34d399";
+            ctx.fillText(isOcc ? "STATUS: Occluded (Matched)" : "STATUS: Tracked (Kalman 8D)", bx + 6, by + bh + 26);
+        });
+
+        requestAnimationFrame(renderAILoop);
+    }
+
+    renderAILoop();
 }

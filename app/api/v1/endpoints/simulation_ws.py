@@ -62,6 +62,9 @@ async def websocket_simulation_stream(websocket: WebSocket):
                         gate_status = payload.get("status", "ACTIVE")
                         angle = payload.get("angle", 45.0)
                         warehouse_simulation.set_gate_status(gate_id, gate_status, angle)
+                    elif action == "TOGGLE_OCCLUSION":
+                        enable = payload.get("enable")
+                        warehouse_simulation.toggle_occlusion(enable)
                     elif action == "PING":
                         await websocket.send_json({"type": "PONG", "timestamp": payload.get("timestamp")})
                 except Exception as e:
@@ -99,3 +102,4 @@ async def websocket_simulation_stream(websocket: WebSocket):
             task.cancel()
     finally:
         manager.disconnect(websocket)
+
