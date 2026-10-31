@@ -1,6 +1,3 @@
-"""
-AI Smart Logistics Tracking & Dispatching System
-Mã số đề tài: SV2026-ICTU-08
-"""
+"""AI Smart Logistics Tracking System Package."""
 __version__ = "1.0.0"
 

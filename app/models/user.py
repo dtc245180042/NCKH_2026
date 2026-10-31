@@ -1,27 +1,31 @@
-"""
-SQLAlchemy ORM Model: users (Bảng 1 trong thiết kế CSDL 3NF)
-Quản lý người dùng, mật khẩu băm bcrypt và phân quyền RBAC (UC-01 & UC-02)
-"""
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
-from sqlalchemy.orm import relationship
-from app.core.database import Base
+from sqlalchemy import Boolean, CheckConstraint, Integer, String, text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.models.base import Base
 
 
 class User(Base):
+    """Bảng 4.5: Thiết kế chi tiết cấu trúc bảng Users (Người dùng hệ thống)."""
     __tablename__ = "users"
 
-    user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    username = Column(String(50), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(255), nullable=False)
-    full_name = Column(String(100), nullable=True)
-    role = Column(String(20), default="OPERATOR", nullable=False)  # ADMIN, OPERATOR, VIEWER
-    is_active = Column(Boolean, default=True, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('Admin', 'Manager', 'Operator')",
+            name="role_valid",
+        ),
+        {
+            "mysql_engine": "InnoDB",
+            "mysql_charset": "utf8mb4",
+            "mysql_collate": "utf8mb4_unicode_ci",
+        },
+    )
 
-    # Quan hệ tới nhật ký hoạt động
-    logs = relationship("SystemLog", back_populates="user", cascade="all, delete-orphan")
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(100), nullable=False)
+    role: Mapped[str] = mapped_column(String(20), nullable=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=text("1"))
 
-    def __repr__(self):
-        return f"<User(user_id={self.user_id}, username='{self.username}', role='{self.role}')>"
+    # Quan hệ với bảng system_logs
+    system_logs = relationship("SystemLog", back_populates="user")
 

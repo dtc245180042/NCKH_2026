@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEXUSLOG - AI Warehouse OS</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body class="light-theme">
+    <!-- ========================================== -->
+    <!-- 1. MÀN HÌNH ĐĂNG NHẬP CHUẨN GIAO DIỆN SÁNG (SPLIT SCREEN) -->
+    <!-- ========================================== -->
+    <div id="auth-section" class="auth-split-container">
+        <!-- Cột Trái: Giới thiệu & Sơ đồ minh họa Kho thông minh -->
+        <div class="auth-left-banner">
+            <div class="grid-pattern-overlay"></div>
+            
+            <div class="banner-content">
+                <!-- Brand Logo Header -->
+                <div class="brand-header">
+                    <div class="brand-icon-box">
+                        <i class="fa-solid fa-cube"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-name">NEXUSLOG</span>
+                        <span class="brand-sub">AI WAREHOUSE OS</span>
+                    </div>
+                </div>
+
+                <!-- Headline -->
+                <div class="hero-headline">
+                    <div class="tag-pill">
+                        <span class="dot-blue"></span> Điều hành kho thông minh
+                    </div>
+                    <h1>Mọi kiện hàng. Mọi robot.<br>Trong một tầm nhìn.</h1>
+                    <p class="hero-subtext">
+                        Theo dõi, phân loại và điều phối kho theo thời gian thực bằng thị giác AI và thiết bị IoT.
+                    </p>
+                </div>
+
+                <!-- Warehouse Mini Digital Twin Card -->
+                <div class="mini-twin-card">
+                    <div class="twin-header">
+                        <div class="legend-row">
+                            <span class="legend-title">Băng chuyền</span>
+                            <span class="legend-tag cam-tag"><i class="fa-solid fa-camera"></i> Camera AI</span>
+                        </div>
+                    </div>
+
+                    <!-- Diagram Body -->
+                    <div class="twin-diagram">
+                        <!-- Conveyor Track -->
+                        <div class="conveyor-track">
+                            <div class="conveyor-line"></div>
+                            <!-- Package 1 -->
+                            <div class="package-box p-1"><i class="fa-solid fa-box"></i></div>
+                            <!-- Package 2 inside Camera inspection -->
+                            <div class="package-box p-2 in-cam">
+                                <i class="fa-solid fa-box"></i>
+                                <span class="id-tag">ID 07</span>
+                            </div>
+                            <!-- Package 3 -->
+                            <div class="package-box p-3"><i class="fa-solid fa-box"></i></div>
+                        </div>
+
+                        <!-- 3 IoT Sorting Gates -->
+                        <div class="gates-row">
+                            <div class="gate-slot">Cổng 1</div>
+                            <div class="gate-slot active-gate">Cổng 2</div>
+                            <div class="gate-slot">Cổng 3</div>
+                        </div>
+
+                        <!-- Storage Racks & AMR section -->
+                        <div class="rack-amr-section">
+                            <div class="rack-group">
+                                <span class="rack-title">Kệ hàng</span>
+                                <div class="rack-grid">
+                                    <div class="rack-cell"></div>
+                                    <div class="rack-cell"></div>
+                                    <div class="rack-cell"></div>
+                                    <div class="rack-cell"></div>
+                                    <div class="rack-cell"></div>
+                                    <div class="rack-cell"></div>
+                                    <div class="rack-cell"></div>
+                                    <div class="rack-cell"></div>
+                                </div>
+                            </div>
+
+                            <!-- AMR Path Line & AMR Robot -->
+                            <div class="amr-dispatch-zone">
+                                <div class="path-dot-start"></div>
+                                <div class="amr-path-dashed"></div>
+                                <div class="amr-robot-node">
+                                    <div class="amr-box"><i class="fa-solid fa-robot"></i></div>
+                                    <span class="amr-label">AMR</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Feature Chips -->
+                <div class="banner-footer-chips">
+                    <span><i class="fa-solid fa-circle-dot text-blue"></i> Digital Twin 2D</span>
+                    <span><i class="fa-solid fa-circle-dot text-blue"></i> Truy vết kiện hàng bằng AI</span>
+                    <span><i class="fa-solid fa-circle-dot text-blue"></i> Điều phối AMR và IoT</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Form Đăng Nhập Chuẩn Pixel-Perfect -->
+        <div class="auth-right-panel">
+            <div class="auth-top-action">
+                <a href="/docs" target="_blank" class="help-link">
+                    <i class="fa-regular fa-circle-question"></i> Trợ giúp
+                </a>
+            </div>
+
+            <div class="auth-form-card">
+                <div class="form-title-group">
+                    <h2>Chào mừng trở lại</h2>
+                    <p>Đăng nhập để vào trung tâm điều hành kho.</p>
+                </div>
+
+                <!-- Role Pills -->
+                <div class="role-selector-row">
+                    <span class="role-title">Dành cho</span>
+                    <div class="role-capsules">
+                        <span class="capsule active" data-role="Admin">Quản trị viên</span>
+                        <span class="capsule" data-role="Manager">Quản lý kho</span>
+                        <span class="capsule" data-role="Operator">Nhân viên kho</span>
+                    </div>
+                </div>
+
+                <!-- Login Form -->
+                <form id="login-form">
+                    <div class="form-field">
+                        <label>Tên đăng nhập</label>
+                        <div class="input-with-icon">
+                            <i class="fa-regular fa-user field-icon"></i>
+                            <input type="text" id="login-username" required placeholder="Nhập tên đăng nhập" autocomplete="username">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <div class="label-with-link">
+                            <label>Mật khẩu</label>
+                            <a href="#" class="forgot-link" onclick="alert('Vui lòng liên hệ Quản trị viên để đặt lại mật khẩu.')">Quên mật khẩu?</a>
+                        </div>
+                        <div class="input-with-icon">
+                            <i class="fa-solid fa-lock field-icon"></i>
+                            <input type="password" id="login-password" required placeholder="Nhập mật khẩu" autocomplete="current-password">
+                            <button type="button" class="btn-toggle-eye" id="btn-toggle-password">
+                                <i class="fa-regular fa-eye"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Error Alert -->
+                    <div id="login-error" class="error-light-alert" style="display: none;">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="login-error-text">Tên đăng nhập hoặc mật khẩu không chính xác</span>
+                    </div>
+
+                    <button type="submit" class="btn-login-blue" id="btn-submit-login">
+                        <span>Đăng nhập</span>
+                        <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+
+                    <div class="hint-shortcut">
+                        Nhấn <kbd>Enter</kbd> để đăng nhập nhanh
+                    </div>
+                </form>
+
+                <!-- Admin Policy Notice Box -->
+                <div class="notice-info-box">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <p>Tài khoản do quản trị viên cấp. Chưa có tài khoản hoặc bị khóa? Hãy liên hệ quản trị viên kho của bạn.</p>
+                </div>
+
+                <!-- Bottom Status -->
+                <div class="system-status-indicator">
+                    <span class="dot-green"></span> Hệ thống hoạt động bình thường
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- 2. BẢNG ĐIỀU HÀNH CHÍNH (GIAO DIỆN SÁNG CAO CẤP) -->
+    <!-- ========================================== -->
+    <div id="dashboard-section" class="dashboard-layout" style="display: none;">
+        <!-- Top Navigation -->
+        <header class="app-header">
+            <div class="header-left">
+                <div class="brand-badge">
+                    <div class="brand-icon-sm"><i class="fa-solid fa-cube"></i></div>
+                    <span class="brand-text-sm">NEXUSLOG</span>
+                </div>
+                <div class="header-divider"></div>
+                <nav class="top-nav-tabs">
+                    <button class="nav-tab active" data-tab="tab-canvas">
+                        <i class="fa-solid fa-cubes-stacked"></i> Digital Twin 2D
+                    </button>
+                    <button class="nav-tab" data-tab="tab-ai-vision">
+                        <i class="fa-solid fa-brain"></i> Thị Giác AI & ByteTrack
+                    </button>
+                    <button class="nav-tab" data-tab="tab-iot-amr">
+                        <i class="fa-solid fa-microchip"></i> Điều Khiển IoT & Robot AMR
+                    </button>
+                    <button class="nav-tab" data-tab="tab-packages">
+                        <i class="fa-solid fa-barcode"></i> Kiện Hàng & Phân Loại
+                    </button>
+                    <button class="nav-tab" data-tab="tab-analytics">
+                        <i class="fa-solid fa-chart-pie"></i> Báo Cáo & Thống Kê KPI
+                    </button>
+                    <button class="nav-tab" data-tab="tab-users" id="tab-users-btn" style="display: none;">
+                        <i class="fa-solid fa-user-shield"></i> Quản Trị Người Dùng
+                    </button>
+                    <button class="nav-tab" data-tab="tab-logs">
+                        <i class="fa-solid fa-clipboard-list"></i> Nhật Ký Kiểm Toán
+                    </button>
+                </nav>
+            </div>
+
+            <div class="header-right">
+                <div class="user-chip">
+                    <div class="avatar-circle" id="user-initials">AD</div>
+                    <div class="user-details">
+                        <span class="user-fullname" id="nav-user-fullname">Administrator</span>
+                        <span class="user-role-badge" id="nav-user-role">Admin</span>
+                    </div>
+                    <button class="btn-logout" id="btn-logout" title="Đăng xuất">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace Area -->
+        <main class="dashboard-body">
+            <!-- TAB 1: DIGITAL TWIN 2D SIMULATION -->
+            <div id="tab-canvas" class="tab-pane active">
+                <div class="canvas-dashboard-grid">
+                    <!-- Left: Interactive Canvas -->
+                    <div class="white-card canvas-card">
+                        <div class="card-head">
+                            <div class="card-title-group">
+                                <h3>Digital Twin Kho Hàng 2D (Thời Gian Thực)</h3>
+                                <p>Mô phỏng đa tác tử: Băng chuyền thông minh, 3 Cổng phân loại IoT và Xe tự hành AMR</p>
+                            </div>
+                            <div class="card-actions">
+                                <div class="fps-badge">
+                                    <span class="fps-dot"></span> 60 FPS Live
+                                </div>
+                                <button class="btn-light-action" id="btn-spawn-pkg">
+                                    <i class="fa-solid fa-plus"></i> Tạo Kiện Hàng
+                                </button>
+                                <button class="btn-light-action active" id="btn-toggle-cam">
+                                    <i class="fa-solid fa-crosshairs"></i> AI Bounding Box
+                                </button>
+                                <button class="btn-light-action" id="btn-canvas-occlusion">
+                                    <i class="fa-solid fa-cloud-sun"></i> Test Che Khuất
+                                </button>
+                                <button class="btn-light-action" id="btn-test-jam" style="color:#dc2626;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Test Kẹt Cổng (Jam)
+                                </button>
+                                <button class="btn-light-action" id="btn-toggle-add-obs">
+                                    <i class="fa-solid fa-ban"></i> Đặt Vật Cản A*
+                                </button>
+                                <button class="btn-light-action" id="btn-clear-obs">
+                                    <i class="fa-solid fa-eraser"></i> Xóa Vật Cản
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Banner Cảnh Báo Kẹt Cổng (Anti-jam Emergency) -->
+                        <div id="canvas-jam-banner" class="jam-emergency-banner" style="display: none;">
+                            <div>
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span><strong>CẢNH BÁO KẸT CỔNG PHÂN LOẠI (GATE JAM ALERT):</strong> Đã dừng khẩn cấp băng chuyền để bảo vệ cơ khí!</span>
+                            </div>
+                            <button id="btn-clear-jam-banner" class="btn-clear-jam">
+                                <i class="fa-solid fa-wrench"></i> Khôi Phục Hoạt Động
+                            </button>
+                        </div>
+
+                        <!-- Canvas Frame -->
+                        <div class="canvas-frame">
+                            <canvas id="warehouse-canvas" width="920" height="460"></canvas>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="canvas-legend-row">
+                            <span><span class="legend-dot dot-conveyor"></span> Băng chuyền</span>
+                            <span><span class="legend-dot dot-camera"></span> Camera YOLOv12</span>
+                            <span><span class="legend-dot dot-gate"></span> 3 Cổng IoT</span>
+                            <span><span class="legend-dot dot-amr"></span> Xe AMR (A*)</span>
+                            <span><span class="legend-dot dot-shelf"></span> Ô Kệ Zone A/B/C</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: Live Telemetry & Stats -->
+                    <div class="white-card telemetry-sidebar">
+                        <div class="card-head">
+                            <h4>Chỉ Số Vận Hành (KPI)</h4>
+                        </div>
+                        <div class="kpi-mini-grid">
+                            <div class="kpi-box">
+                                <span class="kpi-num" id="kpi-total-packages">1,248</span>
+                                <span class="kpi-lbl">Kiện hàng đã xử lý</span>
+                            </div>
+                            <div class="kpi-box">
+                                <span class="kpi-num text-blue" id="kpi-active-gates">3 / 3</span>
+                                <span class="kpi-lbl">Cổng IoT hoạt động</span>
+                            </div>
+                            <div class="kpi-box">
+                                <span class="kpi-num text-green">98.4%</span>
+                                <span class="kpi-lbl">Độ chính xác AI</span>
+                            </div>
+                            <div class="kpi-box">
+                                <span class="kpi-num text-purple" id="kpi-amr-state">ACTIVE</span>
+                                <span class="kpi-lbl">Xe AMR điều phối</span>
+                            </div>
+                        </div>
+
+                        <div class="telemetry-log-box">
+                            <h5>Dòng Sự Kiện Trực Tiếp</h5>
+                            <div class="log-stream-list" id="telemetry-feed">
+                                <div class="stream-item stream-ai">
+                                    <i class="fa-solid fa-camera"></i>
+                                    <div>
+                                        <strong>YOLOv12n:</strong> Phát hiện PKG-84001 (conf: 0.98)
+                                        <small>14.6ms • Vạch kích hoạt</small>
+                                    </div>
+                                </div>
+                                <div class="stream-item stream-iot">
+                                    <i class="fa-solid fa-microchip"></i>
+                                    <div>
+                                        <strong>IoT Diverter:</strong> Mở Cổng 1 (Miền Bắc)
+                                        <small>Relay kích hoạt</small>
+                                    </div>
+                                </div>
+                                <div class="stream-item stream-amr">
+                                    <i class="fa-solid fa-robot"></i>
+                                    <div>
+                                        <strong>AMR-01:</strong> Chuyển kiện sang Kệ Zone B-05
+                                        <small>Lộ trình A* tối ưu</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB AI VISION & BYTETRACK (LOG-111 & LOG-112) -->
+            <div id="tab-ai-vision" class="tab-pane">
+                <div class="ai-vision-grid">
+                    <!-- Left: Real-time Camera AI Vision Stream -->
+                    <div class="ai-hud-card">
+                        <div class="card-head flex-between">
+                            <div class="card-title-group">
+                                <h3>Trạm Thị Giác AI & Thuật Toán ByteTrack (LOG-111, LOG-112)</h3>
+                                <p>Nhận diện kiện hàng bằng YOLOv12n và duy trì định danh với bộ lọc Kalman 8 chiều</p>
+                            </div>
+                            <div class="card-actions">
+                                <button class="btn-test-occlusion" id="btn-toggle-occlusion">
+                                    <i class="fa-solid fa-cloud-sun"></i> Giả Lập Che Khuất (Occlusion Test)
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Status Alert on Occlusion -->
+                        <div id="occlusion-status-alert" class="ai-occlusion-banner">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span id="occlusion-status-text">ByteTrack đang hoạt động ở trạng thái bình thường (100% High-Confidence Detections).</span>
+                        </div>
+
+                        <!-- Canvas Camera AI Feed -->
+                        <div class="ai-cam-container">
+                            <div class="cam-hud-overlay">
+                                <div class="cam-live-pill">
+                                    <span class="dot-rec"></span> CAM-01 • YOLOv12n LIVE (640x640)
+                                </div>
+                                <div class="cam-live-pill">
+                                    <i class="fa-solid fa-bolt"></i> 8D KALMAN FILTER
+                                </div>
+                            </div>
+                            <canvas id="ai-vision-canvas" width="880" height="420"></canvas>
+                        </div>
+
+                        <div class="canvas-legend-row">
+                            <span><span class="legend-dot" style="background:#10b981;"></span> Giai đoạn 1 (Conf &ge; 0.6)</span>
+                            <span><span class="legend-dot" style="background:#f59e0b;"></span> Giai đoạn 2 - Che khuất (0.1 &le; Conf &lt; 0.6)</span>
+                            <span><span class="legend-dot" style="background:#3b82f6;"></span> Vector Vận Tốc Kalman [vx, vy]</span>
+                            <span><span class="legend-dot" style="background:#8b5cf6;"></span> Vết Quỹ Đạo (Trajectory)</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: MOT Challenge Metrics & Architecture -->
+                    <div class="ai-hud-card">
+                        <div class="card-head">
+                            <h4>Chỉ Số Đánh Giá MOT Challenge & Độ Trễ (NFR)</h4>
+                        </div>
+
+                        <!-- 4 Big Metric Cards -->
+                        <div class="ai-metric-grid">
+                            <div class="ai-metric-card">
+                                <span class="lbl">ĐỘ TRỄ SUY LUẬN (LATENCY)</span>
+                                <span class="val text-blue" id="ai-metric-latency">14.6 ms</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-check"></i> Đạt chuẩn NFR &le; 30ms</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">HOÁN ĐỔI ID (ID SWITCHES)</span>
+                                <span class="val text-green" id="ai-metric-idswitches">0</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-shield-check"></i> Triệt tiêu hoàn toàn</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">ĐỘ CHÍNH XÁC MOTA</span>
+                                <span class="val" style="color:#0284c7;">94.2%</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-check"></i> Vượt chuẩn công nghiệp</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">NHẤT QUÁN ĐỊNH DANH (IDF1)</span>
+                                <span class="val" style="color:#7c3aed;">91.8%</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-check"></i> Kháng che khuất</span>
+                            </div>
+                        </div>
+
+                        <!-- Flow Architecture of ByteTrack -->
+                        <div class="bytetrack-flow-box">
+                            <h5><i class="fa-solid fa-diagram-project"></i> Cơ Chế Ghép Đôi 2 Giai Đoạn (ByteTrack)</h5>
+                            <div class="flow-step-list">
+                                <div class="flow-step-item">
+                                    <div class="step-num">1</div>
+                                    <div>
+                                        <strong>Dự đoán Kalman 8 chiều:</strong>
+                                        <p>Ước lượng vị trí và vận tốc $[cx, cy, a, h, vx, vy, va, vh]$ của kiện hàng.</p>
+                                    </div>
+                                </div>
+                                <div class="flow-step-item">
+                                    <div class="step-num">2</div>
+                                    <div>
+                                        <strong>Giai đoạn 1 (High Score &ge; 0.6):</strong>
+                                        <p>Ghép cặp phát hiện rõ nét bằng ma trận IoU và Hungarian Matching.</p>
+                                    </div>
+                                </div>
+                                <div class="flow-step-item step-stage2">
+                                    <div class="step-num">3</div>
+                                    <div>
+                                        <strong>Giai đoạn 2 (Low Score 0.1 &le; conf &lt; 0.6):</strong>
+                                        <p>Khôi phục kiện hàng bị che khuất hoặc mờ bóng. <strong>Duy trì Track ID cũ</strong>, tuyệt đối không sinh ID mới hay gây ID Switch!</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB IOT & AMR CONTROL (LOG-114 TO LOG-117) -->
+            <div id="tab-iot-amr" class="tab-pane">
+                <div class="iot-amr-grid">
+                    <!-- Cột Trái: Trạng thái và điều khiển 3 Cổng Phân Loại IoT -->
+                    <div class="white-card">
+                        <div class="card-head flex-between">
+                            <div class="card-title-group">
+                                <h3>Hệ Thống 3 Cổng Phân Loại IoT (Virtual Routing & Anti-Jam)</h3>
+                                <p>Tự động điều phối theo mã bưu chính (10000..99999) và ngắt băng tải khi kẹt hàng</p>
+                            </div>
+                        </div>
+
+                        <div class="iot-gate-card-list" id="iot-gates-container">
+                            <!-- Gate 1 -->
+                            <div class="gate-control-item" id="gate-card-1">
+                                <div class="gate-info-col">
+                                    <h5><i class="fa-solid fa-door-open text-blue"></i> Cổng 1 (Miền Bắc)</h5>
+                                    <p>Mã vùng: <strong>10000 - 39999</strong> • Vạch kích hoạt: X=220px</p>
+                                    <small>Đã phân loại: <strong id="gate-count-1">0</strong> bưu kiện</small>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span class="gate-angle-badge" id="gate-angle-1">Góc: 0.0°</span>
+                                    <span class="badge" id="gate-status-badge-1" style="background:#ecfdf5; color:#059669; font-weight:700;">● IDLE</span>
+                                </div>
+                            </div>
+
+                            <!-- Gate 2 -->
+                            <div class="gate-control-item" id="gate-card-2">
+                                <div class="gate-info-col">
+                                    <h5><i class="fa-solid fa-door-open text-blue"></i> Cổng 2 (Miền Trung)</h5>
+                                    <p>Mã vùng: <strong>40000 - 69999</strong> • Vạch kích hoạt: X=360px</p>
+                                    <small>Đã phân loại: <strong id="gate-count-2">0</strong> bưu kiện</small>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span class="gate-angle-badge" id="gate-angle-2">Góc: 0.0°</span>
+                                    <span class="badge" id="gate-status-badge-2" style="background:#ecfdf5; color:#059669; font-weight:700;">● IDLE</span>
+                                </div>
+                            </div>
+
+                            <!-- Gate 3 -->
+                            <div class="gate-control-item" id="gate-card-3">
+                                <div class="gate-info-col">
+                                    <h5><i class="fa-solid fa-door-open text-blue"></i> Cổng 3 (Miền Nam)</h5>
+                                    <p>Mã vùng: <strong>70000 - 99999</strong> • Vạch kích hoạt: X=500px</p>
+                                    <small>Đã phân loại: <strong id="gate-count-3">0</strong> bưu kiện</small>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span class="gate-angle-badge" id="gate-angle-3">Góc: 0.0°</span>
+                                    <span class="badge" id="gate-status-badge-3" style="background:#ecfdf5; color:#059669; font-weight:700;">● IDLE</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:1.25rem; display:flex; gap:0.75rem;">
+                            <button class="btn-test-occlusion" id="btn-tab-test-jam">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Giả Lập Kẹt Cổng 2 (3 Giây)
+                            </button>
+                            <button class="btn-light-action" id="btn-tab-clear-jam">
+                                <i class="fa-solid fa-wrench"></i> Khôi Phục Kẹt Cổng
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cột Phải: Điều hướng Robot AMR & Thuật toán A* -->
+                    <div class="amr-telemetry-panel">
+                        <div class="card-head">
+                            <div class="card-title-group">
+                                <h4>Robot Tự Hành AMR (A* Pathfinding & Dynamic Obstacles)</h4>
+                                <p>Thuật toán A* trên lưới ô vuông 20px với hàm Heuristic Chebyshev 8 hướng</p>
+                            </div>
+                        </div>
+
+                        <div class="ai-metric-grid">
+                            <div class="ai-metric-card">
+                                <span class="lbl">TRẠNG THÁI AMR</span>
+                                <span class="val text-purple" id="amr-stat-state">NAVIGATING</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang tuần tra</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">PIN HOẠT ĐỘNG</span>
+                                <span class="val text-green" id="amr-stat-battery">96.5%</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-battery-full"></i> Pin tốt</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">TỌA ĐỘ HIỆN TẠI</span>
+                                <span class="val" id="amr-stat-coords" style="font-size:1.1rem; color:#0f172a;">X: 520 | Y: 340</span>
+                                <span class="sub-badge badge-success-pill">Lưới 46x23 cells</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">ĐỘ TRỄ TÍNH TOÁN A*</span>
+                                <span class="val text-blue">0.8 ms</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-bolt"></i> NFR &le; 10ms</span>
+                            </div>
+                        </div>
+
+                        <div class="bytetrack-flow-box">
+                            <h5><i class="fa-solid fa-route"></i> Đặc Tính Kỹ Thuật Lộ Trình A*</h5>
+                            <ul style="font-size:0.82rem; color:var(--text-body); line-height:1.7; padding-left:1.25rem;">
+                                <li><strong>Hàm đánh giá:</strong> $f(n) = g(n) + h(n)$ với Heuristic Chebyshev đa hướng.</li>
+                                <li><strong>Chống cắt góc (Corner Cutting):</strong> Tuyệt đối không băng chéo qua góc nhọn khi ô liền kề bị cản.</li>
+                                <li><strong>Tái lập lịch cục bộ (Local Re-planning):</strong> Khi phát hiện vật cản bất ngờ, A* tự động tính đường né trong <strong>&lt; 1 ms</strong>.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: PACKAGES TABLE -->
+            <div id="tab-packages" class="tab-pane">
+                <div class="white-card">
+                    <div class="card-head flex-between">
+                        <div class="card-title-group">
+                            <h3>Danh Sách Kiện Hàng & Phân Loại</h3>
+                            <p>Theo dõi thời gian thực các bưu kiện trên băng chuyền và vị trí lưu kho</p>
+                        </div>
+                        <button class="btn-blue-primary" id="btn-open-create-pkg">
+                            <i class="fa-solid fa-plus"></i> Thêm Kiện Hàng
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="modern-light-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã Barcode</th>
+                                    <th>Khối Lượng</th>
+                                    <th>Điểm Đến</th>
+                                    <th>Phân Hạng ABC</th>
+                                    <th>Cổng Gạt</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Vị Trí Kệ</th>
+                                    <th>Thao Tác Lưu Kho</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packages-table-body">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: USERS RBAC (ADMIN) -->
+            <div id="tab-users" class="tab-pane">
+                <div class="white-card">
+                    <div class="card-head flex-between">
+                        <div class="card-title-group">
+                            <h3>Quản Trị Người Dùng & Phân Quyền (RBAC)</h3>
+                            <p>Quản lý danh sách nhân sự, phân vai trò Admin/Manager/Operator và khóa tài khoản</p>
+                        </div>
+                        <button class="btn-blue-primary" id="btn-open-create-user">
+                            <i class="fa-solid fa-user-plus"></i> Thêm Người Dùng
+                        </button>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="modern-light-table">
+                            <thead>
+                                <tr>
+                                    <th>Mã ID</th>
+                                    <th>Tên Đăng Nhập</th>
+                                    <th>Họ Và Tên</th>
+                                    <th>Vai Trò</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Thao Tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body">
+                                <!-- Dynamic user rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: SYSTEM LOGS -->
+            <div id="tab-logs" class="tab-pane">
+                <div class="white-card">
+                    <div class="card-head">
+                        <div class="card-title-group">
+                            <h3>Nhật Ký Kiểm Toán An Ninh (System Logs)</h3>
+                            <p>Lưu vết đầy đủ các sự kiện truy cập, đăng nhập và thay đổi dữ liệu</p>
+                        </div>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="modern-light-table font-mono">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Thời Gian</th>
+                                    <th>User ID</th>
+                                    <th>Hành Động</th>
+                                    <th>Chi Tiết Sự Kiện</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-table-body">
+                                <!-- Dynamic logs -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: ANALYTICS & OPERATIONAL KPIS (LOG-120) -->
+            <div id="tab-analytics" class="tab-pane">
+                <div class="analytics-container">
+                    <!-- Top Action Bar -->
+                    <div class="analytics-header-card">
+                        <div class="analytics-header-left">
+                            <div class="analytics-badge-icon"><i class="fa-solid fa-chart-line"></i></div>
+                            <div>
+                                <h2>Báo Cáo Phân Tích & Chỉ Số Hiệu Suất Vận Hành (KPI Dashboard)</h2>
+                                <p>Giám sát sản lượng thực tế, độ chính xác phân luồng bưu chính, tỷ lệ lấp đầy kho ABC và hiệu năng thuật toán AI</p>
+                            </div>
+                        </div>
+                        <div class="analytics-header-actions">
+                            <button class="btn-light-action" id="btn-refresh-analytics">
+                                <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Dữ Liệu
+                            </button>
+                            <button class="btn-blue-primary" id="btn-export-kpi-report">
+                                <i class="fa-solid fa-file-arrow-down"></i> Xuất Báo Cáo Nghiệm Thu (.JSON)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 4 Summary KPI Cards -->
+                    <div class="kpi-cards-grid">
+                        <div class="kpi-metric-card">
+                            <div class="kpi-card-header">
+                                <span class="kpi-card-title">Tổng Sản Lượng Kiện Hàng</span>
+                                <div class="kpi-icon-pill bg-blue-subtle text-blue"><i class="fa-solid fa-boxes-stacked"></i></div>
+                            </div>
+                            <div class="kpi-metric-value" id="kpi-analytics-total-pkg">0</div>
+                            <div class="kpi-metric-footer">
+                                <span class="badge-success"><i class="fa-solid fa-arrow-trend-up"></i> Lưu kho: <b id="kpi-analytics-stored-pkg">0</b></span>
+                                <span class="text-muted">Đang trên băng: <b id="kpi-analytics-belt-pkg">0</b></span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-metric-card">
+                            <div class="kpi-card-header">
+                                <span class="kpi-card-title">Độ Chính Xác Phân Luồng</span>
+                                <div class="kpi-icon-pill bg-green-subtle text-green"><i class="fa-solid fa-bullseye"></i></div>
+                            </div>
+                            <div class="kpi-metric-value text-green" id="kpi-analytics-sorting-accuracy">99.4%</div>
+                            <div class="kpi-metric-footer">
+                                <span class="badge-success"><i class="fa-solid fa-shield-check"></i> Đạt chuẩn NFR &ge; 99%</span>
+                                <span class="text-muted">Tái kiểm: <b id="kpi-analytics-recheck-rate">0.6%</b></span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-metric-card">
+                            <div class="kpi-card-header">
+                                <span class="kpi-card-title">Chỉ Số Thị Giác AI (MOTA)</span>
+                                <div class="kpi-icon-pill bg-purple-subtle text-purple"><i class="fa-solid fa-eye"></i></div>
+                            </div>
+                            <div class="kpi-metric-value text-purple" id="kpi-analytics-mota">94.2%</div>
+                            <div class="kpi-metric-footer">
+                                <span class="badge-accent"><i class="fa-solid fa-bolt"></i> Độ trễ: <b id="kpi-analytics-ai-latency">14.6 ms</b></span>
+                                <span class="text-muted">ID Switches: <b id="kpi-analytics-id-switches">0</b></span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-metric-card">
+                            <div class="kpi-card-header">
+                                <span class="kpi-card-title">Tỷ Lệ Chiếm Dụng Kệ Hàng</span>
+                                <div class="kpi-icon-pill bg-orange-subtle text-orange"><i class="fa-solid fa-warehouse"></i></div>
+                            </div>
+                            <div class="kpi-metric-value text-orange" id="kpi-analytics-occupancy">0%</div>
+                            <div class="kpi-metric-footer">
+                                <span class="badge-warning"><i class="fa-solid fa-layer-group"></i> Phân loại ABC</span>
+                                <span class="text-muted">Tổng dung lượng: <b id="kpi-analytics-capacity">0</b> ô</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3-Column Visual Detailed Breakdown -->
+                    <div class="analytics-detail-grid">
+                        <!-- Col 1: Sorting Gates Regional Breakdown -->
+                        <div class="white-card analytics-subcard">
+                            <div class="card-head">
+                                <div class="card-title-group">
+                                    <h3><i class="fa-solid fa-route text-blue"></i> Phân Bổ Cổng Phân Loại IoT Theo Vùng</h3>
+                                    <p>Ánh xạ theo mã bưu chính (Zipcode) và tỷ lệ chuyển hướng gạt servo</p>
+                                </div>
+                            </div>
+                            <div class="sorting-breakdown-list" id="analytics-gates-list">
+                                <!-- Dynamic gate rows with progress bars -->
+                            </div>
+                        </div>
+
+                        <!-- Col 2: ABC Storage Occupancy -->
+                        <div class="white-card analytics-subcard">
+                            <div class="card-head">
+                                <div class="card-title-group">
+                                    <h3><i class="fa-solid fa-cubes-stacked text-purple"></i> Phân Bổ Ô Kệ Lưu Kho (Chiến Lược ABC)</h3>
+                                    <p>Tối ưu hóa vị trí hàng hóa theo tần suất xuất kho và khoảng cách di chuyển AMR</p>
+                                </div>
+                            </div>
+                            <div class="abc-zone-bars" id="analytics-abc-zones">
+                                <!-- Dynamic ABC bars -->
+                            </div>
+                        </div>
+
+                        <!-- Col 3: AI MOT & AMR Dispatching Benchmarks -->
+                        <div class="white-card analytics-subcard">
+                            <div class="card-head">
+                                <div class="card-title-group">
+                                    <h3><i class="fa-solid fa-microchip text-green"></i> Bảng Đo Kiểm Hiệu Năng & MOT Challenge</h3>
+                                    <p>Đo đạc thực nghiệm phục vụ hồ sơ nghiệm thu đề tài NCKH (SV2026-ICTU-08)</p>
+                                </div>
+                            </div>
+                            <div class="table-wrap">
+                                <table class="modern-light-table font-mono" style="font-size: 13px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Chỉ Số</th>
+                                            <th>Tiêu Chuẩn NFR</th>
+                                            <th>Kết Quả Thực Nghiệm</th>
+                                            <th>Đánh Giá</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><b>MOTA (Tracking)</b></td>
+                                            <td>&ge; 80.0%</td>
+                                            <td id="metric-mota" class="text-green font-bold">94.2%</td>
+                                            <td><span class="badge-success">ĐẠT CHUẨN</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>IDF1 Score</b></td>
+                                            <td>&ge; 80.0%</td>
+                                            <td id="metric-idf1" class="text-green font-bold">91.8%</td>
+                                            <td><span class="badge-success">ĐẠT CHUẨN</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>ID Switches (Bảo lưu ID)</b></td>
+                                            <td>&le; 2 lần</td>
+                                            <td id="metric-idsw" class="text-green font-bold">0 lần</td>
+                                            <td><span class="badge-success">XUẤT SẮC</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>AI Inference Time</b></td>
+                                            <td>&le; 30.0 ms</td>
+                                            <td id="metric-inf" class="text-green font-bold">14.6 ms</td>
+                                            <td><span class="badge-success">ĐẠT CHUẨN</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>A* Planning Latency</b></td>
+                                            <td>&le; 15.0 ms</td>
+                                            <td id="metric-astar" class="text-green font-bold">&lt; 1.0 ms</td>
+                                            <td><span class="badge-success">ĐẠT CHUẨN</span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><b>Tốc độ khung hình (FPS)</b></td>
+                                            <td>&ge; 30 FPS</td>
+                                            <td id="metric-fps" class="text-green font-bold">60.0 FPS</td>
+                                            <td><span class="badge-success">MƯỢT MÀ</span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL TẠO TÀI KHOẢN MỚI (LIGHT CLEAN THEME) -->
+    <div id="user-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-window">
+            <div class="modal-head">
+                <div class="modal-title">
+                    <div class="modal-icon"><i class="fa-solid fa-user-shield"></i></div>
+                    <div>
+                        <h4>Thêm Tài Khoản Người Dùng</h4>
+                        <small>Khởi tạo thông tin xác thực và phân quyền RBAC</small>
+                    </div>
+                </div>
+                <button class="btn-close" id="modal-close-btn">&times;</button>
+            </div>
+
+            <form id="create-user-form">
+                <div class="modal-body">
+                    <div class="form-group-light">
+                        <label>Tên đăng nhập (Username)</label>
+                        <input type="text" id="new-user-username" required placeholder="Tối thiểu 3 ký tự (chữ, số)">
+                    </div>
+
+                    <div class="form-group-light">
+                        <label>Họ và tên đầy đủ</label>
+                        <input type="text" id="new-user-fullname" required placeholder="ví dụ: Nguyễn Văn Toàn">
+                    </div>
+
+                    <div class="form-group-light">
+                        <label>Vai trò phân quyền</label>
+                        <select id="new-user-role">
+                            <option value="Operator">Operator - Nhân viên vận hành</option>
+                            <option value="Manager">Manager - Quản lý kho</option>
+                            <option value="Admin">Admin - Quản trị viên hệ thống</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group-light">
+                        <label>Mật khẩu khởi tạo</label>
+                        <input type="password" id="new-user-password" required placeholder="Tối thiểu 8 ký tự, tối đa 72 bytes">
+                        <small class="hint-txt">Tuân thủ chuẩn bảo mật băm mật khẩu Bcrypt 12 rounds</small>
+                    </div>
+
+                    <div id="modal-user-error" class="error-light-alert" style="display: none;">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="modal-user-error-text">Thông báo lỗi</span>
+                    </div>
+                </div>
+
+                <div class="modal-foot">
+                    <button type="button" class="btn-secondary-light" id="modal-cancel-btn">Hủy bỏ</button>
+                    <button type="submit" class="btn-blue-primary">Tạo tài khoản</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL TẠO KIỆN HÀNG MỚI (LIGHT CLEAN THEME) -->
+    <div id="package-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-window">
+            <div class="modal-head">
+                <div class="modal-title">
+                    <div class="modal-icon"><i class="fa-solid fa-box"></i></div>
+                    <div>
+                        <h4>Tiếp Nhận Kiện Hàng Mới</h4>
+                        <small>Nhập mã vạch và thông tin bưu kiện vào hệ thống</small>
+                    </div>
+                </div>
+                <button class="btn-close" id="modal-pkg-close-btn">&times;</button>
+            </div>
+
+            <form id="create-package-form">
+                <div class="modal-body">
+                    <div class="form-group-light">
+                        <label>Mã vạch bưu kiện (Barcode)</label>
+                        <input type="text" id="new-pkg-barcode" required placeholder="ví dụ: PKG-84005">
+                    </div>
+
+                    <div class="form-group-light">
+                        <label>Khối lượng kiện (kg)</label>
+                        <input type="number" step="0.1" min="0.1" id="new-pkg-weight" required placeholder="ví dụ: 1.5">
+                    </div>
+
+                    <div class="form-group-light">
+                        <label>Kích thước DxRxC (cm)</label>
+                        <input type="text" id="new-pkg-dim" placeholder="ví dụ: 30x20x15">
+                    </div>
+
+                    <div class="form-group-light">
+                        <label>Điểm đến (Mã tỉnh hoặc bưu chính)</label>
+                        <input type="text" id="new-pkg-dest" required placeholder="ví dụ: Hà Nội hoặc HAN">
+                    </div>
+
+                    <div id="modal-pkg-error" class="error-light-alert" style="display: none;">
+                        <i class="fa-solid fa-circle-exclamation"></i>
+                        <span id="modal-pkg-error-text">Thông báo lỗi</span>
+                    </div>
+                </div>
+
+                <div class="modal-foot">
+                    <button type="button" class="btn-secondary-light" id="modal-pkg-cancel-btn">Hủy bỏ</button>
+                    <button type="submit" class="btn-blue-primary">Lưu bưu kiện</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL GỢI Ý XẾP CHỖ ABC (LOG-118) -->
+    <div id="slot-modal" class="modal-backdrop" style="display: none;">
+        <div class="modal-window">
+            <div class="modal-head">
+                <div class="modal-title">
+                    <div class="modal-icon" style="background:#eff6ff; color:#2563eb;"><i class="fa-solid fa-cubes"></i></div>
+                    <div>
+                        <h4>Gợi Ý Vị Trí Ô Kệ Tối Ưu (ABC Heuristic)</h4>
+                        <small id="slot-modal-subtitle">Tối ưu quãng đường di chuyển của xe tự hành AMR</small>
+                    </div>
+                </div>
+                <button class="btn-close" id="modal-slot-close-btn">&times;</button>
+            </div>
+
+            <div class="modal-body" id="slot-modal-body">
+                <!-- Nội dung hiển thị gợi ý ô kệ -->
+            </div>
+
+            <div class="modal-foot">
+                <button type="button" class="btn-secondary-light" id="modal-slot-cancel-btn">Đóng</button>
+                <button type="button" class="btn-blue-primary" id="modal-slot-confirm-btn">
+                    <i class="fa-solid fa-check"></i> Xác Nhận Lưu Kho & Điều Phối AMR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,36 +1,40 @@
-"""
-SQLAlchemy ORM Model: packages (Bảng 2 trong thiết kế CSDL 3NF)
-Quản lý thông tin bưu kiện, mã bưu chính ảo, kích thước, tải trọng và trạng thái (UC-03)
-"""
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
-from app.core.database import Base
+from typing import Optional
+from sqlalchemy import CheckConstraint, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from app.models.base import Base
 
 
 class Package(Base):
+    """Bảng 4.6: Thiết kế chi tiết cấu trúc bảng Packages (Kiện hàng lưu thông)."""
     __tablename__ = "packages"
 
-    package_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    barcode = Column(String(64), unique=True, index=True, nullable=False)
-    tracking_code = Column(String(64), index=True, nullable=True)
-    weight = Column(Float, default=1.0, nullable=False)  # kg
-    dimensions = Column(String(50), default="30x25x20", nullable=False)  # Dài x Rộng x Cao cm
-    destination_zone = Column(String(50), nullable=False)  # Miền Bắc, Miền Trung, Miền Nam, Quốc Tế
-    postal_code = Column(String(20), default="100000", nullable=False)
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('Created', 'On_Belt', 'Stored', 'Dispatched')",
+            name="status_valid",
+        ),
+        {
+            "mysql_engine": "InnoDB",
+            "mysql_charset": "utf8mb4",
+            "mysql_collate": "utf8mb4_unicode_ci",
+        },
+    )
 
-    # Trạng thái vòng đời kiện hàng:
-    # 'RECEIVED' (Đã nhận Inbound) -> 'ON_CONVEYOR' -> 'SORTED' -> 'STORED' -> 'DISPATCHED' | 'ERROR'
-    status = Column(String(30), default="RECEIVED", index=True, nullable=False)
-
-    current_location_id = Column(Integer, ForeignKey("storage_locations.location_id"), index=True, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    barcode: Mapped[str] = mapped_column(String(32), nullable=False, unique=True)
+    weight: Mapped[float] = mapped_column(Float, nullable=False)
+    dimensions: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    destination_code: Mapped[str] = mapped_column(String(20), nullable=False)
+    status: Mapped[str] = mapped_column(String(30), nullable=False)
+    tracking_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    location_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("storage_locations.id", ondelete="RESTRICT"), nullable=True, index=True
+    )
+    gate_id: Mapped[Optional[int]] = mapped_column(
+        Integer, ForeignKey("sorting_gates.id", ondelete="RESTRICT"), nullable=True, index=True
+    )
 
     # Relationships
     storage_location = relationship("StorageLocation", back_populates="packages")
-    tracking_sessions = relationship("TrackingSession", back_populates="package", cascade="all, delete-orphan")
-
-    def __repr__(self):
-        return f"<Package(id={self.package_id}, barcode='{self.barcode}', dest='{self.destination_zone}', status='{self.status}')>"
+    sorting_gate = relationship("SortingGate", back_populates="packages")
 

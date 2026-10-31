@@ -1,45 +1,56 @@
-"""
-Pydantic v2 schemas: Package management & Inbound ingestion (UC-03)
-"""
-from datetime import datetime
-from typing import Optional
-from pydantic import BaseModel, Field
+from typing import Literal, Optional
+from pydantic import BaseModel, ConfigDict, Field
+
+PackageStatus = Literal["Created", "On_Belt", "Stored", "Dispatched"]
 
 
 class PackageBase(BaseModel):
-    barcode: str = Field(..., example="PKG-VN-100293")
-    tracking_code: Optional[str] = Field(None, example="VNPOST-HN-01")
-    weight: float = Field(default=1.5, ge=0.1, le=50.0, description="Trọng lượng (kg)")
-    dimensions: str = Field(default="30x25x20", description="Kích thước cm")
-    destination_zone: str = Field(..., example="Miền Bắc")
-    postal_code: str = Field(default="100000", example="100000")
+    barcode: str = Field(..., min_length=3, max_length=32, description="Mã vạch bưu kiện duy nhất")
+    weight: float = Field(..., gt=0, description="Khối lượng kiện hàng (kg)")
+    dimensions: Optional[str] = Field(None, max_length=50, description="Kích thước DxRxC (cm)")
+    destination_code: str = Field(..., min_length=2, max_length=20, description="Mã bưu chính hoặc mã tỉnh/thành đích")
 
 
 class PackageCreate(PackageBase):
     pass
 
 
-class InboundRequest(BaseModel):
-    barcode: Optional[str] = None
-    destination_zone: str = Field(..., example="Miền Bắc")
-    postal_code: str = Field(default="100000", example="100000")
-    weight: Optional[float] = 2.0
-
-
 class PackageUpdate(BaseModel):
-    status: Optional[str] = None
-    destination_zone: Optional[str] = None
-    current_location_id: Optional[int] = None
-    weight: Optional[float] = None
+    weight: Optional[float] = Field(None, gt=0)
+    dimensions: Optional[str] = None
+    destination_code: Optional[str] = None
+    status: Optional[PackageStatus] = None
+    location_id: Optional[int] = None
+    gate_id: Optional[int] = None
 
 
 class PackageResponse(PackageBase):
-    package_id: int
-    status: str
-    current_location_id: Optional[int] = None
-    created_at: datetime
-    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        from_attributes = True
+    id: int
+    status: str
+    tracking_id: Optional[int] = None
+    location_id: Optional[int] = None
+    gate_id: Optional[int] = None
+
+
+class PackageListResponse(BaseModel):
+    total: int
+    items: list[PackageResponse]
+
+
+class StorageLocationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    code: str
+    zone: str
+    capacity: int
+    current_count: int
+    is_full: bool
+
+
+class StorageLocationListResponse(BaseModel):
+    total: int
+    items: list[StorageLocationResponse]
 

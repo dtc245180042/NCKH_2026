@@ -1,41 +1,40 @@
-# ==============================================================================
-# Dockerfile: Hệ thống AI Smart Logistics Backend (FastAPI + 60 FPS WebSocket)
-# Đề tài NCKH Sinh viên: SV2026-ICTU-08 | Khoa CNTT - ĐH CNTT&TT Thái Nguyên
-# ==============================================================================
-
-FROM python:3.11-slim
-
-# Thiết lập biến môi trường Python
-ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PORT=8000
+# Multi-stage Dockerfile for AI Smart Logistics Backend
+# Stage 1: Build & Dependencies
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-# Cài đặt các gói phụ trợ hệ thống tối thiểu
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    build-essential \
+    gcc \
+    default-libmysqlclient-dev \
+    pkg-config \
     && rm -rf /var/lib/apt/lists/*
 
-# Cài đặt dependencies
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install -r requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Sao chép mã nguồn ứng dụng và frontend
-COPY app/ ./app/
-COPY src/ ./src/
+# Stage 2: Final Runtime Image
+FROM python:3.12-slim AS runner
 
-# Tạo thư mục dữ liệu cho CSDL SQLite
-RUN mkdir -p /app/data
+WORKDIR /app
 
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PATH="/install/bin:$PATH" \
+    PYTHONPATH="/app"
+
+# Copy installed python packages from builder
+COPY --from=builder /install /usr/local
+
+# Copy application source code
+COPY . /app
+
+# Expose FastAPI default port
 EXPOSE 8000
 
-# Healthcheck xác định container sẵn sàng
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
-
-# Khởi chạy Uvicorn ASGI server
+# Run FastAPI via Uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 

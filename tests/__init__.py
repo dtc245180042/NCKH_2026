@@ -1,4 +1,2 @@
-"""
-Unit tests package for AI Smart Logistics Backend.
-"""
+"""Automated test suite package."""
 
