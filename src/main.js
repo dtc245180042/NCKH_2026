@@ -1126,6 +1126,7 @@ class SimulationEngine {
 
   /**
    * Thiết lập độ phân giải Canvas chuẩn High-DPI (Retina / 4K) chống mờ hình
+   * và tính toán ma trận scale tự động thích ứng với mọi kích thước màn hình
    */
   initCanvasSize() {
     const container = document.getElementById('viewportContainer');
@@ -1137,7 +1138,13 @@ class SimulationEngine {
 
     this.canvas.width = this.canvasWidth * dpr;
     this.canvas.height = this.canvasHeight * dpr;
-    this.ctx.scale(dpr, dpr);
+
+    // Tự động scale thích ứng màn hình
+    const scaleX = this.canvasWidth / CONFIG.BASE_WIDTH;
+    const scaleY = this.canvasHeight / CONFIG.BASE_HEIGHT;
+    this.viewScale = Math.min(scaleX, scaleY, 1.15);
+    this.viewOffsetX = (this.canvasWidth - CONFIG.BASE_WIDTH * this.viewScale) / 2;
+    this.viewOffsetY = (this.canvasHeight - CONFIG.BASE_HEIGHT * this.viewScale) / 2;
 
     this.dpr = dpr;
   }
@@ -1213,8 +1220,11 @@ class SimulationEngine {
     // Sự kiện rê chuột xem thông tin kiện hàng (Raycasting)
     this.canvas.addEventListener('mousemove', (e) => {
       const rect = this.canvas.getBoundingClientRect();
-      this.mousePos.x = e.clientX - rect.left;
-      this.mousePos.y = e.clientY - rect.top;
+      const rawX = e.clientX - rect.left;
+      const rawY = e.clientY - rect.top;
+
+      this.mousePos.x = (rawX - this.viewOffsetX) / this.viewScale;
+      this.mousePos.y = (rawY - this.viewOffsetY) / this.viewScale;
 
       let found = null;
       for (let i = this.parcels.length - 1; i >= 0; i--) {
@@ -1351,18 +1361,25 @@ class SimulationEngine {
   }
 
   /**
-   * Thực thi lệnh vẽ toàn bộ khung nhìn đồ họa
+   * Thực thi lệnh vẽ toàn bộ khung nhìn đồ họa với scale thích ứng
    */
   render() {
     const ctx = this.ctx;
+    const dpr = this.dpr;
     const w = this.canvasWidth;
     const h = this.canvasHeight;
 
-    // Xóa khung hình cũ
+    // Reset transform và xóa khung hình cũ
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, w, h);
 
+    // Áp dụng scale thích ứng cho bản vẽ kho
+    ctx.save();
+    ctx.translate(this.viewOffsetX, this.viewOffsetY);
+    ctx.scale(this.viewScale, this.viewScale);
+
     // Lớp 1: Mặt bằng kho, lưới sàn, kệ lưu trữ, AMR, Băng tải, Cổng Inbound & Outbound
-    this.environment.draw(ctx, w, h, this.layers);
+    this.environment.draw(ctx, CONFIG.BASE_WIDTH, CONFIG.BASE_HEIGHT, this.layers);
 
     // Lớp 2: Cổng phân loại cơ khí IoT & vạch cảm biến quang
     this.sortingGates.forEach(gate => gate.draw(ctx, this.layers));
@@ -1370,7 +1387,9 @@ class SimulationEngine {
     // Lớp 3: Các kiện hàng, Bounding Box YOLO, và Tracking Trail ByteTrack
     this.parcels.forEach(p => p.draw(ctx, this.layers));
 
-    // Lớp 4: Bộ đếm FPS góc màn hình và biểu đồ Sparkline
+    ctx.restore();
+
+    // Lớp 4: Bộ đếm FPS góc màn hình và biểu đồ Sparkline (Vẽ cố định góc viewport)
     if (this.layers.hud) {
       this.fpsCounter.renderHUD(ctx, w, h);
     }
@@ -1384,3 +1403,4 @@ window.addEventListener('DOMContentLoaded', () => {
   // Khởi tạo Engine mô phỏng khi tài liệu HTML đã sẵn sàng
   window.simulationApp = new SimulationEngine();
 });
+
