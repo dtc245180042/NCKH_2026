@@ -7,20 +7,25 @@ const AppState = {
     currentUser: null,
     showAIBoundingBox: true,
     occlusionSimulated: false,
+    addObstacleMode: false,
     packages: [],
     locations: [],
     users: [],
     logs: [],
     ws: null,
+    obstacles: [],
+    gates: [],
+    conveyorRunning: true,
     trails: {},
     amr: { 
         x: 520, y: 340, 
         targetX: 720, targetY: 170, 
-        heading: 0, state: "ACTIVE", battery: 96 
+        heading: 0, state: "NAVIGATING", battery: 96.5,
+        path_waypoints: []
     },
     itemsOnBelt: [
-        { id: 101, x: 80, y: 155, barcode: "PKG-84001", conf: 0.98, gate: 1, track_id: 1, is_occluded: false },
-        { id: 102, x: 280, y: 155, barcode: "PKG-84002", conf: 0.94, gate: 2, track_id: 2, is_occluded: false },
+        { id: 101, x: 80, y: 155, barcode: "PKG-10001", conf: 0.98, gate: 1, track_id: 1, is_occluded: false },
+        { id: 102, x: 280, y: 155, barcode: "PKG-55002", conf: 0.94, gate: 2, track_id: 2, is_occluded: false },
         { id: 103, x: 460, y: 155, barcode: "PKG-84003", conf: 0.96, gate: 3, track_id: 3, is_occluded: false }
     ]
 };
@@ -429,6 +434,17 @@ function initCanvasEngine() {
                 }
                 if (snapshot.amr) {
                     AppState.amr = snapshot.amr;
+                    updateAMRUI(snapshot.amr);
+                }
+                if (snapshot.gates) {
+                    AppState.gates = snapshot.gates;
+                    updateGatesUI(snapshot.gates);
+                }
+                if (snapshot.obstacles) {
+                    AppState.obstacles = snapshot.obstacles;
+                }
+                if (snapshot.jam_alert) {
+                    handleJamAlert(snapshot.jam_alert, snapshot.conveyor_running);
                 }
                 if (snapshot.ai_vision) {
                     AppState.occlusionSimulated = snapshot.ai_vision.occlusion_simulated;
@@ -451,6 +467,12 @@ function initCanvasEngine() {
     const btnSpawn = document.getElementById("btn-spawn-pkg");
     const btnToggleCam = document.getElementById("btn-toggle-cam");
     const btnCanvasOcc = document.getElementById("btn-canvas-occlusion");
+    const btnTestJam = document.getElementById("btn-test-jam");
+    const btnClearJam = document.getElementById("btn-clear-jam-banner");
+    const btnTabTestJam = document.getElementById("btn-tab-test-jam");
+    const btnTabClearJam = document.getElementById("btn-tab-clear-jam");
+    const btnToggleObs = document.getElementById("btn-toggle-add-obs");
+    const btnClearObs = document.getElementById("btn-clear-obs");
 
     if (btnSpawn) {
         btnSpawn.addEventListener("click", () => {
@@ -475,6 +497,58 @@ function initCanvasEngine() {
         });
     }
 
+    const triggerJamFn = () => {
+        if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
+            AppState.ws.send(JSON.stringify({ action: "TRIGGER_JAM", gate_id: 2 }));
+        }
+    };
+    const clearJamFn = () => {
+        if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
+            AppState.ws.send(JSON.stringify({ action: "CLEAR_JAM" }));
+        }
+    };
+
+    if (btnTestJam) btnTestJam.addEventListener("click", triggerJamFn);
+    if (btnTabTestJam) btnTabTestJam.addEventListener("click", triggerJamFn);
+    if (btnClearJam) btnClearJam.addEventListener("click", clearJamFn);
+    if (btnTabClearJam) btnTabClearJam.addEventListener("click", clearJamFn);
+
+    if (btnToggleObs) {
+        btnToggleObs.addEventListener("click", () => {
+            AppState.addObstacleMode = !AppState.addObstacleMode;
+            btnToggleObs.classList.toggle("btn-obs-active");
+            if (AppState.addObstacleMode) {
+                btnToggleObs.innerHTML = '<i class="fa-solid fa-crosshairs"></i> Click Canvas Để Đặt!';
+            } else {
+                btnToggleObs.innerHTML = '<i class="fa-solid fa-ban"></i> Đặt Vật Cản A*';
+            }
+        });
+    }
+
+    if (btnClearObs) {
+        btnClearObs.addEventListener("click", () => {
+            if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
+                AppState.ws.send(JSON.stringify({ action: "CLEAR_OBSTACLES" }));
+            }
+        });
+    }
+
+    // Xử lý Click trên Canvas để thêm vật cản động A*
+    canvas.addEventListener("click", (e) => {
+        if (AppState.addObstacleMode && AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const clickX = (e.clientX - rect.left) * scaleX;
+            const clickY = (e.clientY - rect.top) * scaleY;
+            AppState.ws.send(JSON.stringify({
+                action: "ADD_OBSTACLE",
+                x: clickX,
+                y: clickY
+            }));
+        }
+    });
+
     if (btnToggleCam) {
         btnToggleCam.addEventListener("click", () => {
             AppState.showAIBoundingBox = !AppState.showAIBoundingBox;
@@ -486,16 +560,16 @@ function initCanvasEngine() {
         animTime += 0.02;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Nền Lưới
+        // Nền Lưới & Vật Cản Động A*
         drawCleanGrid(ctx, canvas.width, canvas.height);
 
         // Băng chuyền thông minh
         drawLightConveyor(ctx, animTime);
 
         // 3 Cổng Gạt Phân Loại IoT
-        drawLightIoTGate(ctx, 220, 150, "Cổng 1", animTime);
-        drawLightIoTGate(ctx, 360, 150, "Cổng 2", animTime + 1, true);
-        drawLightIoTGate(ctx, 500, 150, "Cổng 3", animTime + 2);
+        drawLightIoTGate(ctx, 220, 150, "Cổng 1", 1);
+        drawLightIoTGate(ctx, 360, 150, "Cổng 2", 2);
+        drawLightIoTGate(ctx, 500, 150, "Cổng 3", 3);
 
         // Trạm Camera AI YOLOv12
         drawLightYOLOStation(ctx, 110, 100, animTime);
@@ -522,6 +596,22 @@ function initCanvasEngine() {
         for (let y = 0; y < h; y += step) {
             ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
         }
+
+        // Vẽ các vật cản động A* (Dynamic Obstacles)
+        AppState.obstacles.forEach(obs => {
+            const ox = obs.x;
+            const oy = obs.y;
+            ctx.fillStyle = "#fef08a";
+            ctx.fillRect(ox - 10, oy - 10, 20, 20);
+            ctx.strokeStyle = "#ca8a04";
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(ox - 10, oy - 10, 20, 20);
+
+            // Biểu tượng cảnh báo
+            ctx.fillStyle = "#a16207";
+            ctx.font = "bold 10px 'Font Awesome 6 Free'";
+            ctx.fillText("\uf071", ox - 5, oy + 4);
+        });
     }
 
     function drawLightConveyor(ctx, t) {
@@ -542,22 +632,50 @@ function initCanvasEngine() {
         ctx.setLineDash([]);
     }
 
-    function drawLightIoTGate(ctx, x, y, title, t, isActive = false) {
-        ctx.fillStyle = isActive ? "#eff6ff" : "#ffffff";
-        ctx.strokeStyle = isActive ? "#2563eb" : "#cbd5e1";
-        ctx.lineWidth = isActive ? 2 : 1;
-        ctx.fillRect(x - 5, y - 18, 48, 22);
-        ctx.strokeRect(x - 5, y - 18, 48, 22);
+    function drawLightIoTGate(ctx, x, y, title, gate_id) {
+        const gate = AppState.gates.find(g => g.id === gate_id) || { diverter_angle: 0.0, status: "IDLE" };
+        const isJammed = gate.status === "JAMMED";
+        const isDiverting = gate.status === "DIVERTING" || gate.diverter_angle > 0;
 
-        ctx.fillStyle = isActive ? "#2563eb" : "#475569";
-        ctx.font = "bold 10px 'Plus Jakarta Sans', sans-serif";
-        ctx.fillText(title, x + 6, y - 3);
+        // Hộp tên cổng
+        ctx.fillStyle = isJammed ? "#fee2e2" : (isDiverting ? "#eff6ff" : "#ffffff");
+        ctx.strokeStyle = isJammed ? "#ef4444" : (isDiverting ? "#2563eb" : "#cbd5e1");
+        ctx.lineWidth = (isJammed || isDiverting) ? 2 : 1;
+        ctx.fillRect(x - 5, y - 20, 52, 22);
+        ctx.strokeRect(x - 5, y - 20, 52, 22);
 
-        ctx.strokeStyle = isActive ? "#2563eb" : "#cbd5e1";
-        ctx.lineWidth = 1.5;
+        ctx.fillStyle = isJammed ? "#dc2626" : (isDiverting ? "#2563eb" : "#475569");
+        ctx.font = "bold 9px 'Plus Jakarta Sans', sans-serif";
+        ctx.fillText(title, x - 2, y - 6);
+
+        // Làn trượt (Chute line)
+        ctx.strokeStyle = isJammed ? "#ef4444" : (isDiverting ? "#2563eb" : "#cbd5e1");
+        ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
-        ctx.beginPath(); ctx.moveTo(x + 19, y + 44); ctx.lineTo(x + 19, y + 95); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x + 20, y + 44); ctx.lineTo(x + 20, y + 95); ctx.stroke();
         ctx.setLineDash([]);
+
+        // Đèn LED chỉ báo trạng thái tại miệng làn trượt
+        ctx.fillStyle = isJammed ? "#ef4444" : (isDiverting ? "#10b981" : "#94a3b8");
+        ctx.beginPath();
+        ctx.arc(x + 20, y + 95, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cơ cấu cần gạt vật lý (Diverter Arm) xoay từ 0 đến 45 độ
+        const pivotX = x - 5;
+        const pivotY = y + 44;
+        const armLength = 36;
+        const rad = -(gate.diverter_angle || 0.0) * (Math.PI / 180.0);
+
+        ctx.save();
+        ctx.translate(pivotX, pivotY);
+        ctx.rotate(rad);
+        ctx.fillStyle = isJammed ? "#ef4444" : (isDiverting ? "#2563eb" : "#64748b");
+        ctx.fillRect(0, -3, armLength, 6);
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(0, -3, armLength, 6);
+        ctx.restore();
     }
 
     function drawLightYOLOStation(ctx, x, y, t) {
@@ -635,42 +753,118 @@ function initCanvasEngine() {
 
     function drawLightAMR(ctx, t) {
         const amr = AppState.amr;
-        amr.x += (amr.targetX - amr.x) * 0.015;
-        amr.y += (amr.targetY - amr.y) * 0.015;
 
-        if (Math.hypot(amr.targetX - amr.x, amr.targetY - amr.y) < 10) {
-            amr.targetX = amr.targetX === 720 ? 540 : 720;
-            amr.targetY = amr.targetY === 170 ? 330 : 170;
+        // 1. Vẽ toàn bộ đường đi tối ưu A* (Path Waypoints)
+        const waypoints = amr.path_waypoints || [];
+        if (waypoints.length > 1) {
+            ctx.strokeStyle = "#38bdf8";
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([6, 6]);
+            ctx.beginPath();
+            ctx.moveTo(waypoints[0][0], waypoints[0][1]);
+            for (let i = 1; i < waypoints.length; i++) {
+                ctx.lineTo(waypoints[i][0], waypoints[i][1]);
+            }
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Vẽ các hạt Waypoint phát sáng
+            waypoints.forEach((pt, idx) => {
+                ctx.fillStyle = (idx === waypoints.length - 1) ? "#f59e0b" : "#38bdf8";
+                ctx.beginPath();
+                ctx.arc(pt[0], pt[1], 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
         }
 
-        ctx.strokeStyle = "#2563eb";
-        ctx.lineWidth = 2;
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath();
-        ctx.moveTo(amr.x, amr.y);
-        ctx.lineTo(amr.targetX, amr.targetY);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.strokeStyle = "#2563eb";
+        // 2. Điểm đích đến (Goal Marker)
+        ctx.strokeStyle = "#f59e0b";
         ctx.fillStyle = "#ffffff";
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(amr.targetX, amr.targetY, 5, 0, Math.PI * 2);
+        ctx.arc(amr.target_x || 720, amr.target_y || 170, 7, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-
-        ctx.fillStyle = "#0f172a";
-        ctx.fillRect(amr.x - 14, amr.y - 14, 28, 28);
         ctx.fillStyle = "#f59e0b";
+        ctx.beginPath();
+        ctx.arc(amr.target_x || 720, amr.target_y || 170, 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3. Khối thân xe robot AMR
+        ctx.fillStyle = amr.state === "BLOCKED" ? "#ef4444" : "#0f172a";
+        ctx.fillRect(amr.x - 14, amr.y - 14, 28, 28);
+        ctx.strokeStyle = amr.state === "BLOCKED" ? "#fca5a5" : "#3b82f6";
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(amr.x - 14, amr.y - 14, 28, 28);
+
+        // Đèn trung tâm AMR
+        ctx.fillStyle = amr.state === "BLOCKED" ? "#fee2e2" : "#f59e0b";
         ctx.fillRect(amr.x - 6, amr.y - 6, 12, 12);
 
+        // Nhãn AMR
         ctx.fillStyle = "#0f172a";
         ctx.font = "bold 10px 'Plus Jakarta Sans', sans-serif";
-        ctx.fillText("AMR", amr.x + 18, amr.y + 4);
+        ctx.fillText(amr.state === "BLOCKED" ? "AMR (BLOCKED!)" : "AMR (A*)", amr.x + 18, amr.y + 4);
     }
 
     renderLoop();
+}
+
+// Cập nhật giao diện 3 Cổng IoT
+function updateGatesUI(gates) {
+    gates.forEach(g => {
+        const card = document.getElementById(`gate-card-${g.id}`);
+        const countEl = document.getElementById(`gate-count-${g.id}`);
+        const angleEl = document.getElementById(`gate-angle-${g.id}`);
+        const badgeEl = document.getElementById(`gate-status-badge-${g.id}`);
+
+        if (countEl) countEl.textContent = g.diverted_count;
+        if (angleEl) angleEl.textContent = `Góc: ${g.diverter_angle.toFixed(1)}°`;
+
+        if (badgeEl && card) {
+            if (g.status === "JAMMED") {
+                card.className = "gate-control-item gate-jammed";
+                badgeEl.style.background = "#fee2e2";
+                badgeEl.style.color = "#dc2626";
+                badgeEl.textContent = "● KẸT HÀNG (JAMMED)";
+            } else if (g.status === "DIVERTING") {
+                card.className = "gate-control-item";
+                badgeEl.style.background = "#eff6ff";
+                badgeEl.style.color = "#2563eb";
+                badgeEl.textContent = "● ĐANG GẠT HÀNG";
+            } else {
+                card.className = "gate-control-item";
+                badgeEl.style.background = "#ecfdf5";
+                badgeEl.style.color = "#059669";
+                badgeEl.textContent = "● HOẠT ĐỘNG (IDLE)";
+            }
+        }
+    });
+}
+
+// Cập nhật thông số telemetry của xe AMR
+function updateAMRUI(amr) {
+    const stateEl = document.getElementById("amr-stat-state");
+    const batEl = document.getElementById("amr-stat-battery");
+    const coordsEl = document.getElementById("amr-stat-coords");
+
+    if (stateEl) {
+        stateEl.textContent = amr.state || "NAVIGATING";
+        stateEl.className = amr.state === "BLOCKED" ? "val text-red" : "val text-purple";
+    }
+    if (batEl) batEl.textContent = `${(amr.battery || 96.5).toFixed(1)}%`;
+    if (coordsEl) coordsEl.textContent = `X: ${amr.x.toFixed(0)} | Y: ${amr.y.toFixed(0)}`;
+}
+
+// Hiển thị banner cảnh báo dừng khẩn cấp khi có kẹt cổng
+function handleJamAlert(jamAlert, conveyorRunning) {
+    const banner = document.getElementById("canvas-jam-banner");
+    if (!banner) return;
+    if (jamAlert && jamAlert.active) {
+        banner.style.display = "flex";
+    } else {
+        banner.style.display = "none";
+    }
 }
 
 

@@ -210,6 +210,9 @@
                     <button class="nav-tab" data-tab="tab-ai-vision">
                         <i class="fa-solid fa-brain"></i> Thị Giác AI & ByteTrack
                     </button>
+                    <button class="nav-tab" data-tab="tab-iot-amr">
+                        <i class="fa-solid fa-microchip"></i> Điều Khiển IoT & Robot AMR
+                    </button>
                     <button class="nav-tab" data-tab="tab-packages">
                         <i class="fa-solid fa-barcode"></i> Kiện Hàng & Phân Loại
                     </button>
@@ -259,9 +262,29 @@
                                     <i class="fa-solid fa-crosshairs"></i> AI Bounding Box
                                 </button>
                                 <button class="btn-light-action" id="btn-canvas-occlusion">
-                                    <i class="fa-solid fa-cloud-sun"></i> Test Che Khuất (Occlusion)
+                                    <i class="fa-solid fa-cloud-sun"></i> Test Che Khuất
+                                </button>
+                                <button class="btn-light-action" id="btn-test-jam" style="color:#dc2626;">
+                                    <i class="fa-solid fa-triangle-exclamation"></i> Test Kẹt Cổng (Jam)
+                                </button>
+                                <button class="btn-light-action" id="btn-toggle-add-obs">
+                                    <i class="fa-solid fa-ban"></i> Đặt Vật Cản A*
+                                </button>
+                                <button class="btn-light-action" id="btn-clear-obs">
+                                    <i class="fa-solid fa-eraser"></i> Xóa Vật Cản
                                 </button>
                             </div>
+                        </div>
+
+                        <!-- Banner Cảnh Báo Kẹt Cổng (Anti-jam Emergency) -->
+                        <div id="canvas-jam-banner" class="jam-emergency-banner" style="display: none;">
+                            <div>
+                                <i class="fa-solid fa-triangle-exclamation"></i>
+                                <span><strong>CẢNH BÁO KẸT CỔNG PHÂN LOẠI (GATE JAM ALERT):</strong> Đã dừng khẩn cấp băng chuyền để bảo vệ cơ khí!</span>
+                            </div>
+                            <button id="btn-clear-jam-banner" class="btn-clear-jam">
+                                <i class="fa-solid fa-wrench"></i> Khôi Phục Hoạt Động
+                            </button>
                         </div>
 
                         <!-- Canvas Frame -->
@@ -433,6 +456,113 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB IOT & AMR CONTROL (LOG-114 TO LOG-117) -->
+            <div id="tab-iot-amr" class="tab-pane">
+                <div class="iot-amr-grid">
+                    <!-- Cột Trái: Trạng thái và điều khiển 3 Cổng Phân Loại IoT -->
+                    <div class="white-card">
+                        <div class="card-head flex-between">
+                            <div class="card-title-group">
+                                <h3>Hệ Thống 3 Cổng Phân Loại IoT (Virtual Routing & Anti-Jam)</h3>
+                                <p>Tự động điều phối theo mã bưu chính (10000..99999) và ngắt băng tải khi kẹt hàng</p>
+                            </div>
+                        </div>
+
+                        <div class="iot-gate-card-list" id="iot-gates-container">
+                            <!-- Gate 1 -->
+                            <div class="gate-control-item" id="gate-card-1">
+                                <div class="gate-info-col">
+                                    <h5><i class="fa-solid fa-door-open text-blue"></i> Cổng 1 (Miền Bắc)</h5>
+                                    <p>Mã vùng: <strong>10000 - 39999</strong> • Vạch kích hoạt: X=220px</p>
+                                    <small>Đã phân loại: <strong id="gate-count-1">0</strong> bưu kiện</small>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span class="gate-angle-badge" id="gate-angle-1">Góc: 0.0°</span>
+                                    <span class="badge" id="gate-status-badge-1" style="background:#ecfdf5; color:#059669; font-weight:700;">● IDLE</span>
+                                </div>
+                            </div>
+
+                            <!-- Gate 2 -->
+                            <div class="gate-control-item" id="gate-card-2">
+                                <div class="gate-info-col">
+                                    <h5><i class="fa-solid fa-door-open text-blue"></i> Cổng 2 (Miền Trung)</h5>
+                                    <p>Mã vùng: <strong>40000 - 69999</strong> • Vạch kích hoạt: X=360px</p>
+                                    <small>Đã phân loại: <strong id="gate-count-2">0</strong> bưu kiện</small>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span class="gate-angle-badge" id="gate-angle-2">Góc: 0.0°</span>
+                                    <span class="badge" id="gate-status-badge-2" style="background:#ecfdf5; color:#059669; font-weight:700;">● IDLE</span>
+                                </div>
+                            </div>
+
+                            <!-- Gate 3 -->
+                            <div class="gate-control-item" id="gate-card-3">
+                                <div class="gate-info-col">
+                                    <h5><i class="fa-solid fa-door-open text-blue"></i> Cổng 3 (Miền Nam)</h5>
+                                    <p>Mã vùng: <strong>70000 - 99999</strong> • Vạch kích hoạt: X=500px</p>
+                                    <small>Đã phân loại: <strong id="gate-count-3">0</strong> bưu kiện</small>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <span class="gate-angle-badge" id="gate-angle-3">Góc: 0.0°</span>
+                                    <span class="badge" id="gate-status-badge-3" style="background:#ecfdf5; color:#059669; font-weight:700;">● IDLE</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top:1.25rem; display:flex; gap:0.75rem;">
+                            <button class="btn-test-occlusion" id="btn-tab-test-jam">
+                                <i class="fa-solid fa-triangle-exclamation"></i> Giả Lập Kẹt Cổng 2 (3 Giây)
+                            </button>
+                            <button class="btn-light-action" id="btn-tab-clear-jam">
+                                <i class="fa-solid fa-wrench"></i> Khôi Phục Kẹt Cổng
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Cột Phải: Điều hướng Robot AMR & Thuật toán A* -->
+                    <div class="amr-telemetry-panel">
+                        <div class="card-head">
+                            <div class="card-title-group">
+                                <h4>Robot Tự Hành AMR (A* Pathfinding & Dynamic Obstacles)</h4>
+                                <p>Thuật toán A* trên lưới ô vuông 20px với hàm Heuristic Chebyshev 8 hướng</p>
+                            </div>
+                        </div>
+
+                        <div class="ai-metric-grid">
+                            <div class="ai-metric-card">
+                                <span class="lbl">TRẠNG THÁI AMR</span>
+                                <span class="val text-purple" id="amr-stat-state">NAVIGATING</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-circle-notch fa-spin"></i> Đang tuần tra</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">PIN HOẠT ĐỘNG</span>
+                                <span class="val text-green" id="amr-stat-battery">96.5%</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-battery-full"></i> Pin tốt</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">TỌA ĐỘ HIỆN TẠI</span>
+                                <span class="val" id="amr-stat-coords" style="font-size:1.1rem; color:#0f172a;">X: 520 | Y: 340</span>
+                                <span class="sub-badge badge-success-pill">Lưới 46x23 cells</span>
+                            </div>
+                            <div class="ai-metric-card">
+                                <span class="lbl">ĐỘ TRỄ TÍNH TOÁN A*</span>
+                                <span class="val text-blue">0.8 ms</span>
+                                <span class="sub-badge badge-success-pill"><i class="fa-solid fa-bolt"></i> NFR &le; 10ms</span>
+                            </div>
+                        </div>
+
+                        <div class="bytetrack-flow-box">
+                            <h5><i class="fa-solid fa-route"></i> Đặc Tính Kỹ Thuật Lộ Trình A*</h5>
+                            <ul style="font-size:0.82rem; color:var(--text-body); line-height:1.7; padding-left:1.25rem;">
+                                <li><strong>Hàm đánh giá:</strong> $f(n) = g(n) + h(n)$ với Heuristic Chebyshev đa hướng.</li>
+                                <li><strong>Chống cắt góc (Corner Cutting):</strong> Tuyệt đối không băng chéo qua góc nhọn khi ô liền kề bị cản.</li>
+                                <li><strong>Tái lập lịch cục bộ (Local Re-planning):</strong> Khi phát hiện vật cản bất ngờ, A* tự động tính đường né trong <strong>&lt; 1 ms</strong>.</li>
+                            </ul>
                         </div>
                     </div>
                 </div>

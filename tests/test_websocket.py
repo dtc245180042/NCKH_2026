@@ -48,3 +48,22 @@ def test_websocket_simulation_connection_and_stream():
 
             assert found, "Kiện hàng tạo qua WebSocket không xuất hiện trong luồng snapshot"
 
+            # 5. Kiểm thử gửi lệnh thêm vật cản động A* (LOG-116, LOG-117)
+            websocket.send_json({"action": "ADD_OBSTACLE", "x": 600.0, "y": 250.0})
+            frame_obs = websocket.receive_json()
+            assert "obstacles" in frame_obs
+            assert len(frame_obs["obstacles"]) >= 1
+
+            # 6. Kiểm thử giả lập kẹt cổng Anti-jam (LOG-115)
+            websocket.send_json({"action": "TRIGGER_JAM", "gate_id": 1})
+            frame_jam = websocket.receive_json()
+            assert "jam_alert" in frame_jam
+            assert frame_jam["jam_alert"]["active"] is True
+            assert frame_jam["conveyor_running"] is False
+
+            # 7. Khôi phục kẹt cổng
+            websocket.send_json({"action": "CLEAR_JAM"})
+            frame_clean = websocket.receive_json()
+            assert frame_clean["jam_alert"]["active"] is False
+            assert frame_clean["conveyor_running"] is True
+

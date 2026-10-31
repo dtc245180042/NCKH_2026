@@ -65,6 +65,17 @@ async def websocket_simulation_stream(websocket: WebSocket):
                     elif action == "TOGGLE_OCCLUSION":
                         enable = payload.get("enable")
                         warehouse_simulation.toggle_occlusion(enable)
+                    elif action == "ADD_OBSTACLE":
+                        ox = float(payload.get("x", 0.0))
+                        oy = float(payload.get("y", 0.0))
+                        warehouse_simulation.add_obstacle(ox, oy)
+                    elif action == "CLEAR_OBSTACLES":
+                        warehouse_simulation.clear_obstacles()
+                    elif action == "TRIGGER_JAM":
+                        gate_id = int(payload.get("gate_id", 1))
+                        warehouse_simulation.sorting_controller.simulate_jam(gate_id)
+                    elif action == "CLEAR_JAM":
+                        warehouse_simulation.sorting_controller.clear_jam()
                     elif action == "PING":
                         await websocket.send_json({"type": "PONG", "timestamp": payload.get("timestamp")})
                 except Exception as e:
