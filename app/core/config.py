@@ -2,6 +2,7 @@ import json
 from typing import List, Union
 from pydantic import AnyHttpUrl, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy.engine import URL
 
 
 class Settings(BaseSettings):
@@ -26,10 +27,18 @@ class Settings(BaseSettings):
 
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        return (
-            f"mysql+pymysql://{self.MYSQL_USER}:{self.MYSQL_PASSWORD}"
-            f"@{self.MYSQL_SERVER}:{self.MYSQL_PORT}/{self.MYSQL_DB}?charset=utf8mb4"
-        )
+        # Sử dụng URL.create để tự động encode an toàn các ký tự đặc biệt trong mật khẩu (@, :, /, #, ?, %)
+        # LƯU Ý KỸ THUẬT: Khi sử dụng URI này với Alembic (qua configparser của alembic.ini/env.py),
+        # nếu chuỗi URI được URL-encode có chứa ký tự '%', cần escape '%' thành '%%' để tránh lỗi nội suy cấu hình.
+        return URL.create(
+            drivername="mysql+pymysql",
+            username=self.MYSQL_USER,
+            password=self.MYSQL_PASSWORD,
+            host=self.MYSQL_SERVER,
+            port=self.MYSQL_PORT,
+            database=self.MYSQL_DB,
+            query={"charset": "utf8mb4"},
+        ).render_as_string(hide_password=False)
 
     # JWT Security Configuration
     SECRET_KEY: str = "change_this_to_a_secure_random_key_min_32_chars"
