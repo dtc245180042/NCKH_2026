@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  logistics-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai_smart_logistics_backend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./data/logistics.db
+      - SECRET_KEY=ictu-sv2026-secret-token-key-change-in-production
+      - WS_FPS_TARGET=60
+    volumes:
+      - ./data:/app/data
+      - ./src:/app/src
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -39,7 +39,7 @@ Danh sách dưới đây được phân loại theo 3 mức độ ưu tiên. Nh�
     - Repo đã được thiết lập nhánh `develop` làm nhánh tích hợp trung tâm.
     - Các thành viên tạo nhánh `feat/<ten-chuc-nang>` từ `develop` và tạo Pull Request vào `develop`.
 
-- [ ] **6. Bổ sung Dockerfile hoặc bỏ phần nói về Docker**
+- [x] **6. Bổ sung Dockerfile hoặc bỏ phần nói về Docker**
   - **Vị trí:** Mục 1.7 (Chương 1) và Phụ lục B.
   - **Việc cần làm:** Nếu thư mục nộp mã nguồn của nhóm CHƯA CÓ file `Dockerfile`, hãy tạo một file `Dockerfile` đơn giản cho FastAPI, hoặc nếu không dùng Docker thì xóa chữ "Docker container" trong phần bàn giao để tránh bị Hội đồng hỏi vặn tại sao báo cáo ghi Docker mà mã nguồn không có.
 
