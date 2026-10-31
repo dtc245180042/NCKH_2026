@@ -15,14 +15,29 @@ ENV/
 .DS_Store
 Thumbs.db
 
-# Environment variables
+# Environment variables & local secrets
 .env
 .env.local
+.env.*.local
+
+# Database & Docker storage
+mysql_data/
+*.sqlite
+*.sqlite3
+*.db
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
 
 # Logs and temporary files
 *.log
 *.tmp
+logs/
 
-# Word lock files
+# Word lock files and local progress reports
 ~$*
+Báo cáo tình hình*.docx
 
