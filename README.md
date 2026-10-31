@@ -69,3 +69,4 @@ git checkout -b feat/<ten-tinh-nang>
 - Tạo kế hoạch tại `docs/plans/feat-<ten-tinh-nang>.md` theo mẫu `docs/plans/TEMPLATE.md`.
 - Commit riêng biệt từng nhóm file (models, services, api, ui).
 - Mở Pull Request vào nhánh `develop`.
+

@@ -1,0 +1,32 @@
+Issue Id,Issue Type,Summary,Assignee,Priority,Story Points,Sprint,Epic Name,Epic Link,Component,Description
+1,Epic,Kien truc he thong Quan tri va Co so du lieu,Toan,Highest,,Sprint 1,LOG-EPIC-01,,Backend,Thiet ke kien truc pipeline FastAPI co so du lieu 3NF va phan quyen RBAC
+2,Epic,Thu thap Du lieu va Huan luyen Mo hinh YOLOv12n,Loan,High,,Sprint 2,LOG-EPIC-02,,AI-Vision,Xay dung dataset video mo phong va huan luyen YOLOv12n tren GPU
+3,Epic,Phan he Thi giac AI Truy vet Da doi tuong ByteTrack,Toan,Highest,,Sprint 4,LOG-EPIC-03,,AI-Vision,Tich hop Kalman Filter 8D va thuat toan Hungarian matching 2 giai doan
+4,Epic,Dieu khien Cong phan loai IoT va Dieu phoi Robot AMR,Toan,High,,Sprint 5,LOG-EPIC-04,,IoT-AMR,Thuat toan A* tranh vat can dong va dieu khien cong phan loai IoT
+5,Epic,Giao dien Canvas 2D Kiem thu Thuc nghiem va Bao cao,Vinh,High,,Sprint 6,LOG-EPIC-05,,Frontend-QA,Ket xuat Canvas 2D Dashboard WebSocket do luong MOTA FPS va ho so NCKH
+101,Task,Khoi tao khung du an FastAPI cau hinh Docker Git rules va 11 Skills,Toan,Highest,5,Sprint 1,,LOG-EPIC-01,Backend,Khoi tao cau truc thu muc du an cai dat fastapi sqlalchemy pydantic rules va skills
+102,Task,Thiet ke mo hinh CSDL quan he 3NF 6 bang va cai dat SQLAlchemy 2.0 ORM,Toan,High,5,Sprint 1,,LOG-EPIC-01,Backend,Thiet ke 6 bang users packages storage_locations sorting_gates tracking_sessions system_logs
+103,Task,Xay dung phan he Xac thuc JWT va phan quyen nguoi dung RBAC,Toan,High,5,Sprint 1,,LOG-EPIC-01,Backend,Cai dat middleware JWT ma hoa mat khau bcrypt phan 3 role Admin Operator Viewer UC-01 UC-02
+104,Story,Khao sat quy trinh nghiep vu buu chinh va lap tai lieu dac ta SRS IEEE 830,Ha,Medium,3,Sprint 1,,LOG-EPIC-01,Docs,Tong hop quy trinh buu chinh lap tai lieu SRS ma tran truy vet RTM va so do Use Case
+105,Story,Thiet lap moi truong sinh du lieu mo phong 2D 3D bang chuyen kho bai,Loan,High,5,Sprint 2,,LOG-EPIC-02,AI-Vision,Xay dung chuong trinh sinh video mo phong voi goc quay Top-down va Slanted view
+106,Task,Tu sinh va gan nhan 2500 khung hinh video 4 classes,Loan,High,8,Sprint 2,,LOG-EPIC-02,AI-Vision,Gan nhan bounding box 4 lop package pallet vehicle person xuat dinh dang YOLO text format
+107,Task,Chia tap du lieu 70-20-10 theo chuoi video doc lap chong data leakage,Loan,Medium,3,Sprint 2,,LOG-EPIC-02,AI-Vision,Chia sequence-level split ngan chan ro ri du lieu giua cac khung hinh lien ke
+108,Task,Cai dat pipeline huan luyen mo hinh YOLOv12n tren GPU PyTorch,Loan,High,8,Sprint 3,,LOG-EPIC-02,AI-Vision,Huan luyen 100 Epochs batch 16 learning rate 0.001 Cosine Annealing tren RTX 3060 / Colab T4
+109,Task,Danh gia mo hinh YOLOv12n xuat do thi Loss PR-Curve va Ablation Study,Loan,Medium,5,Sprint 3,,LOG-EPIC-02,AI-Vision,Do mAP@0.5 dat tren 96% so sanh voi YOLOv8n va YOLOv11n xuat bieu do huan luyen
+110,Story,Xay dung kenh truyen WebSocket ws simulation stream phuc vu 60 FPS,Toan,Highest,8,Sprint 3,,LOG-EPIC-01,Backend,Thiet lap WebSocket endpoint doc du lieu snapshot tu simulation engine truyen ve client khong tre
+111,Story,Cai dat bo loc Kalman Filter 8 chieu uoc luong chuyen dong trong ByteTrack,Toan,Highest,8,Sprint 4,,LOG-EPIC-03,AI-Vision,Cai dat vector trang thai 8D x_c y_c a h v_x v_y v_a v_h du doan quy dao bounding box
+112,Task,Cai dat co che ghep doi 2 giai doan giai quyet che khuat vat ly,Toan,Highest,13,Sprint 4,,LOG-EPIC-03,AI-Vision,Ghep doi High Score D_high 0.6 va Low Score D_low 0.1 bang thuat toan Hungarian ma tran IoU
+113,Task,Tich hop duong ong lien hoan YOLOv12n va ByteTrack xuat track_id thoi gian thuc,Toan,Highest,8,Sprint 4,,LOG-EPIC-03,AI-Vision,Pipeline OpenCV video stream qua YOLOv12n dua qua ByteTrack xuat ID on dinh tren bang chuyen
+114,Story,Lap trinh logic dieu khien Cong phan loai IoT theo ma vung buu chinh,Ha,High,5,Sprint 4,,LOG-EPIC-04,IoT-AMR,Anh xa ma buu chinh vao Cong 1 Mien Bac Cong 2 Mien Trung Cong 3 Mien Nam UC-06 UC-07
+115,Task,Cai dat co che cam bien phan hoi va xu ly chong ket hang Anti-jam alert,Ha,Medium,5,Sprint 4,,LOG-EPIC-04,IoT-AMR,Kiem tra cam bien cua lan truot sau 3s neu khong co phan hoi phat canh bao dung bang chuyen
+116,Story,Xay dung thuat toan tim duong ngan nhat A* tren luoi ban do kho,Toan,Highest,8,Sprint 5,,LOG-EPIC-04,IoT-AMR,Cai dat thuat toan A* ham heuristic Manhattan 4 huong va Chebyshev 8 huong tren ma tran 50x50
+117,Task,Cai dat co che tranh vat can dong Local Re-planning cho Robot AMR,Toan,Highest,8,Sprint 5,,LOG-EPIC-04,IoT-AMR,Khi phat hien nguoi hoac vat can phanh an toan duoi 1.5m neu vat can tinh qua 3s tai lap lich duong vong
+118,Task,Lap trinh thuat toan Heuristic tinh diem goi y vi tri luu kho toi uu,Toan,High,5,Sprint 5,,LOG-EPIC-04,Backend,Goi y 3 vi tri luu kho dua tren khoang cach hang nang tang thap va quy tac ABC analysis
+119,Story,Thiet ke va lap trinh giao dien mo phong HTML5 Canvas 2D 60 FPS,Vinh,High,8,Sprint 5,,LOG-EPIC-05,Frontend-QA,Ve bang chuyen kien hang tracking trails mau xanh can gat cong mo phong xe AMR chay theo duong A*
+120,Task,Xay dung Dashboard thong ke san luong phan loai va trang thai cong thoi gian thuc,Vinh,Medium,5,Sprint 5,,LOG-EPIC-05,Frontend-QA,Dashboard nhan du lieu tu WebSocket hien thi KPI so kien da phan loai do thi san luong va canh bao do
+121,Task,Viet bo kiem thu tu dong va thuc thi 35 Test Cases chuc nang Phu luc C,Vinh,High,8,Sprint 6,,LOG-EPIC-05,Frontend-QA,Thuc thi 35 kịch ban kiem thu tren 6 phan he Auth Kho AI IoT AMR Canvas ghi log ngay gio chay
+122,Task,Do dac bo chi so chuan quoc te MOT Challenge MOTA IDF1 dem so lan ID Switches,Vinh,High,5,Sprint 6,,LOG-EPIC-05,Frontend-QA,Chay do benchmark so sanh giua SORT DeepSORT va ByteTrack tren video mo phong
+123,Task,Do dac hieu nang Toc do FPS va Do tre Latency theo mat do doi tuong dong thoi,Vinh,Medium,5,Sprint 6,,LOG-EPIC-05,Frontend-QA,Do benchmark toc do khung hinh va do tre truyen nhan WebSocket tu 5 den 50 kien hang dong thoi
+124,Task,Ra soat bao mat loai bo mat khau mac dinh kiem tra toan ven ma nguon,Ha,Medium,3,Sprint 6,,LOG-EPIC-05,Backend,Kiem tra khong hardcode secret loai bo admin_password_2026 kiem tra .gitignore truoc khi merge
+125,Story,Hoan thien Bao cao tong ket NCKH Word 64 trang xu ly cac the boi vang,Toan,Highest,8,Sprint 6,,LOG-EPIC-05,Docs,Ra soat 38 muc nhat ky thay doi kiem tra so lieu Bang 5.8 xac nhan ma so de tai phong KH-CN
+126,Task,Chuan bi slide PowerPoint 18 trang va quay video demo 3 phut minh chung de tai,Toan,High,5,Sprint 6,,LOG-EPIC-05,Docs,Xay dung slide thuyet trinh quay video chat luong cao minh chung AI Tracking va AMR A*
