@@ -1,15 +1,15 @@
 ---
 name: architecture-design
-description: Thiết kế kiến trúc đường ống tích hợp (End-to-End Pipeline) và kiến trúc phân tầng (Layered Architecture) cho Hệ thống AI Logistics Kho thông minh.
+description: Thiết kế kiến trúc đường ống tích hợp (End-to-End Pipeline) và kiến trúc phân tầng (Layered Architecture) với MySQL cho Hệ thống AI Logistics Kho thông minh.
 ---
 
-# Architecture Design Skill — AI Smart Logistics
+# Architecture Design Skill — AI Smart Logistics (FastAPI + MySQL)
 
 ## 1. MỤC TIÊU
-Xây dựng kiến trúc hệ thống module hóa, khớp nối chặt chẽ giữa 4 tầng:
+Xây dựng kiến trúc hệ thống module hóa, kết nối chặt chẽ giữa 4 tầng:
 ```
 [Tầng Thị giác AI] ──> [Tầng Logic Điều phối] ──> [Tầng Backend & API] ──> [Tầng Trực quan hóa]
-(YOLOv12 + ByteTrack)  (Routing Heuristic + A*)   (FastAPI + WebSocket)     (HTML5 Canvas 2D)
+(YOLOv12 + ByteTrack)  (Routing Heuristic + A*)   (FastAPI + MySQL)         (HTML5 Canvas 2D)
 ```
 
 ## 2. CÁC PHÂN HỆ CỐT LÕI (CORE SUBSYSTEMS)
@@ -25,14 +25,14 @@ Xây dựng kiến trúc hệ thống module hóa, khớp nối chặt chẽ gi�
   - Sinh lệnh điều khiển cổng IoT tương ứng (kèm góc mở 45 độ).
   - Lập lịch nhiệm vụ và gọi thuật toán A* tìm đường đi tối ưu cho Robot AMR.
 
-### 2.3. Phân hệ Backend & Quản trị Cơ sở Dữ liệu (FastAPI & ORM)
+### 2.3. Phân hệ Backend & Quản trị Cơ sở Dữ liệu (FastAPI & MySQL Server)
 - **Nhiệm vụ:** Cung cấp hệ thống RESTful API quản lý kiện hàng, vị trí ô kệ, người dùng, và kênh WebSocket đa luồng truyền nhận trạng thái mô phỏng liên tục 60 FPS.
+- **Cơ sở dữ liệu:** MySQL Server (Engine InnoDB, UTF8MB4), tương tác qua SQLAlchemy 2.0 ORM và driver `pymysql`.
 
 ### 2.4. Phân hệ Trực quan hóa Thời gian thực (HTML5 Canvas 2D)
-- **Nhiệm vụ:** Kết xuất đồ họa 2D nhẹ nhàng, mượt mà trên trình duyệt mà không cần cài đặt phần mềm nặng máy (như ROS/Gazebo). Hiển thị băng chuyền, kiện hàng, vệt truy vết ID (tracking trails), cần gạt cổng và robot AMR di chuyển theo lộ trình màu xanh.
+- **Nhiệm vụ:** Kết xuất đồ họa 2D nhẹ nhàng, mượt mà trên trình duyệt. Hiển thị băng chuyền, kiện hàng, vệt truy vết ID (tracking trails), cần gạt cổng và robot AMR di chuyển theo lộ trình màu xanh của thuật toán A*.
 
 ## 3. CHECKLIST KIẾN TRÚC (HUMAN GATE 2)
 - [ ] Tách biệt rõ ràng luồng xử lý AI tính toán nặng khỏi luồng phục vụ Web/API để tránh nghẽn I/O.
 - [ ] Giao tiếp giữa Engine mô phỏng và Frontend qua kênh WebSocket phi đồng bộ (Asynchronous).
-- [ ] Cơ sở dữ liệu chuẩn hóa 3NF, có cơ chế lưu vết lịch sử phiên làm việc (Tracking Sessions).
-
+- [ ] Cơ sở dữ liệu MySQL chuẩn hóa 3NF, lưu vết đầy đủ phiên làm việc và lịch sử audit.
