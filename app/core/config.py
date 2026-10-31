@@ -2,8 +2,13 @@
 Core configuration and application settings.
 """
 from typing import List, Union
-from pydantic_settings import BaseSettings
-from pydantic import AnyHttpUrl, validator
+
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic import BaseModel as BaseSettings
+
+from pydantic import AnyHttpUrl
 
 
 class Settings(BaseSettings):
@@ -33,4 +38,3 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-
