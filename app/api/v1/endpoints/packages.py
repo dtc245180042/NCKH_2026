@@ -63,6 +63,17 @@ def create_package(
     db.add(log)
     db.commit()
 
+    # Bơm kiện hàng trực tiếp vào băng chuyền mô phỏng vật lý của Digital Twin
+    try:
+        from app.services.simulation_engine import warehouse_simulation
+        warehouse_simulation.inject_custom_package(
+            barcode=pkg.barcode,
+            destination_code=pkg.destination_code,
+            weight=pkg.weight,
+            dimensions=pkg.dimensions
+        )
+    except Exception:
+        pass
     return pkg
 
 

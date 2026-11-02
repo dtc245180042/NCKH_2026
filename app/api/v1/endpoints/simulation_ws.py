@@ -41,7 +41,7 @@ manager = ConnectionManager()
 async def websocket_simulation_stream(websocket: WebSocket):
     """
     Kênh truyền phát trực tiếp (Stream) dữ liệu mô phỏng kho hàng ở tốc độ 60 FPS:
-    - Nhận lệnh tương tác từ người dùng (SPAWN_PACKAGE, PING, SET_GATE).
+    - Nhận lệnh tương tác từ người dùng (SPAWN_PACKAGE, PING, SET_GATE, CLEAR_JAM, E-STOP...).
     - Phát snapshot liên tục mỗi ~16.6ms.
     """
     await manager.connect(websocket)
@@ -65,6 +65,15 @@ async def websocket_simulation_stream(websocket: WebSocket):
                     elif action == "TOGGLE_OCCLUSION":
                         enable = payload.get("enable")
                         warehouse_simulation.toggle_occlusion(enable)
+                    elif action == "TOGGLE_AUTO_SPAWN":
+                        enable = payload.get("enable")
+                        warehouse_simulation.toggle_auto_spawn(enable)
+                    elif action == "INJECT_PACKAGE":
+                        barcode = payload.get("barcode", "")
+                        dest = payload.get("destination", "Hà Nội")
+                        weight = float(payload.get("weight", 2.0))
+                        dims = payload.get("dimensions", "30x20x15")
+                        warehouse_simulation.inject_custom_package(barcode, dest, weight, dims)
                     elif action == "ADD_OBSTACLE":
                         ox = float(payload.get("x", 0.0))
                         oy = float(payload.get("y", 0.0))
@@ -73,9 +82,45 @@ async def websocket_simulation_stream(websocket: WebSocket):
                         warehouse_simulation.clear_obstacles()
                     elif action == "TRIGGER_JAM":
                         gate_id = int(payload.get("gate_id", 1))
-                        warehouse_simulation.sorting_controller.simulate_jam(gate_id)
+                        warehouse_simulation.trigger_jam(gate_id)
                     elif action == "CLEAR_JAM":
-                        warehouse_simulation.sorting_controller.clear_jam()
+                        warehouse_simulation.clear_jam()
+                    elif action == "CONVEYOR_REVERSE":
+                        dur = float(payload.get("duration", 2.0))
+                        warehouse_simulation.conveyor_reverse(dur)
+                    elif action == "EMERGENCY_STOP_ALL":
+                        enable = bool(payload.get("enable", True))
+                        warehouse_simulation.emergency_stop_all(enable)
+                    elif action == "FORCE_GATE_ACTUATOR":
+                        gate_id = int(payload.get("gate_id", 1))
+                        warehouse_simulation.force_gate_diverter(gate_id)
+                    elif action == "FORCE_AMR_DOCK":
+                        robot_id = str(payload.get("robot_id", "AMR-01"))
+                        warehouse_simulation.force_amr_dock(robot_id)
+                    elif action == "RESUME_AMR":
+                        robot_id = str(payload.get("robot_id", "AMR-01"))
+                        warehouse_simulation.resume_amr(robot_id)
+                    elif action == "SET_COIL":
+                        addr = int(payload.get("addr", 0))
+                        val = bool(payload.get("value", False))
+                        warehouse_simulation.modbus_engine.datastore.write_coil(addr, val)
+                    elif action == "SET_REGISTER":
+                        addr = int(payload.get("addr", 0))
+                        val = int(payload.get("value", 0))
+                        warehouse_simulation.modbus_engine.datastore.write_holding_register(addr, val)
+                    elif action == "SET_PLC_MODE":
+                        mode = str(payload.get("mode", "RUN")).upper()
+                        warehouse_simulation.modbus_engine.cpu_mode = mode
+                    elif action == "TRIGGER_RFID_BURST":
+                        count = int(payload.get("count", 50))
+                        res = warehouse_simulation.rfid_engine.trigger_bulk_scan(count)
+                        await websocket.send_json({"type": "RFID_BURST_RESULT", "data": res})
+                    elif action == "TOGGLE_RFID_PORTAL":
+                        active = payload.get("active")
+                        if active is None:
+                            warehouse_simulation.rfid_engine.is_active = not warehouse_simulation.rfid_engine.is_active
+                        else:
+                            warehouse_simulation.rfid_engine.is_active = bool(active)
                     elif action == "PING":
                         await websocket.send_json({"type": "PONG", "timestamp": payload.get("timestamp")})
                 except Exception as e:
@@ -89,28 +134,17 @@ async def websocket_simulation_stream(websocket: WebSocket):
         """Truyền phát tọa độ 60 FPS xuống client"""
         try:
             while True:
-                # Cập nhật vật lý 1 bước
+                # Cập nhật frame vật lý (60 FPS = dt ~ 0.016s)
                 warehouse_simulation.update_physics(dt=1.0 / 60.0)
                 snapshot = warehouse_simulation.get_state_snapshot()
                 await websocket.send_json(snapshot)
-                # Đảm bảo tần số 60 FPS (nghỉ 16ms)
                 await asyncio.sleep(1.0 / 60.0)
         except WebSocketDisconnect:
             pass
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Stream kết thúc: {e}")
+        finally:
+            manager.disconnect(websocket)
 
-    # Chạy song song 2 tasks đọc và ghi
-    recv_task = asyncio.create_task(receive_commands())
-    send_task = asyncio.create_task(stream_snapshots())
-
-    try:
-        done, pending = await asyncio.wait(
-            [recv_task, send_task],
-            return_when=asyncio.FIRST_COMPLETED,
-        )
-        for task in pending:
-            task.cancel()
-    finally:
-        manager.disconnect(websocket)
-
+    # Chạy đồng thời cả 2 tác vụ: Nhận lệnh và Truyền phát dữ liệu
+    await asyncio.gather(receive_commands(), stream_snapshots())

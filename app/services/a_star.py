@@ -19,11 +19,11 @@ class AStarPlanner:
         self._init_default_static_obstacles()
 
     def _init_default_static_obstacles(self):
-        """Khai báo các chướng ngại vật cố định trong nhà kho (Khu vực kệ hàng)"""
-        # Kệ hàng nằm ở góc trên phải: cols 30..38, rows 3..12
-        for c in range(30, 39):
-            for r in range(3, 12):
-                if c % 3 != 0: # Để lối đi giữa các dãy kệ
+        """Khai báo chướng ngại vật kệ tĩnh trong nhà kho (Khu vực kệ y=40..130)"""
+        # Kệ hàng nằm ở góc trên phải: cols 32..44, rows 2..6 (y = 40..130)
+        for c in range(32, 45):
+            for r in range(2, 7):
+                if c % 4 != 0:
                     self.obstacles.add((c, r))
 
     def add_obstacle(self, col: int, row: int):
@@ -99,8 +99,14 @@ class AStarPlanner:
         # 4 hướng đường chéo
         diag_dirs = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 
+        closed_set = set()
+
         while open_set:
             _, _, current = heapq.heappop(open_set)
+
+            if current in closed_set:
+                continue
+            closed_set.add(current)
 
             if current == goal:
                 # Tái dựng lộ trình đi từ Goal về Start
@@ -113,32 +119,44 @@ class AStarPlanner:
 
             cur_col, cur_row = current
 
+            cur_g = g_score[current]
+            cols, rows = self.cols, self.rows
+            obs = self.obstacles
+
             # 1. Khám phá các hướng trực giao (chi phí 1.0)
-            neighbors = []
             for dc, dr in ortho_dirs:
                 nc, nr = cur_col + dc, cur_row + dr
-                if not self.is_blocked(nc, nr):
-                    neighbors.append(((nc, nr), 1.0))
+                if 0 <= nc < cols and 0 <= nr < rows and (nc, nr) not in obs:
+                    if (nc, nr) in closed_set:
+                        continue
+                    tentative_g = cur_g + 1.0
+                    if tentative_g < g_score.get((nc, nr), float('inf')):
+                        neighbor = (nc, nr)
+                        came_from[neighbor] = current
+                        g_score[neighbor] = tentative_g
+                        h = max(abs(nc - goal[0]), abs(nr - goal[1])) if heuristic == "chebyshev" else (abs(nc - goal[0]) + abs(nr - goal[1]))
+                        f = tentative_g + h
+                        f_score[neighbor] = f
+                        heapq.heappush(open_set, (f, h, neighbor))
 
-            # 2. Khám phá các hướng đường chéo (chi phí căn bậc 2 ≈ 1.414)
+            # 2. Khám phá các hướng đường chéo (chi phí 1.414)
             if allow_diagonal:
                 for dc, dr in diag_dirs:
                     nc, nr = cur_col + dc, cur_row + dr
-                    if not self.is_blocked(nc, nr):
-                        # Chống hiện tượng Cắt Góc (Corner Cutting):
-                        # Không được đi chéo nếu một trong hai ô trực giao tiếp giáp là vật cản!
-                        if not self.is_blocked(cur_col + dc, cur_row) and not self.is_blocked(cur_col, cur_row + dr):
-                            neighbors.append(((nc, nr), 1.4142))
-
-            for neighbor, cost in neighbors:
-                tentative_g = g_score[current] + cost
-                if tentative_g < g_score.get(neighbor, float('inf')):
-                    came_from[neighbor] = current
-                    g_score[neighbor] = tentative_g
-                    h = h_func(neighbor, goal)
-                    f = tentative_g + h
-                    f_score[neighbor] = f
-                    heapq.heappush(open_set, (f, h, neighbor))
+                    if 0 <= nc < cols and 0 <= nr < rows and (nc, nr) not in obs:
+                        if (nc, nr) in closed_set:
+                            continue
+                        # Chống cắt góc: không đi chéo nếu 1 trong 2 ô trực giao bị cản
+                        if (cur_col + dc, cur_row) not in obs and (cur_col, cur_row + dr) not in obs:
+                            tentative_g = cur_g + 1.4142
+                            if tentative_g < g_score.get((nc, nr), float('inf')):
+                                neighbor = (nc, nr)
+                                came_from[neighbor] = current
+                                g_score[neighbor] = tentative_g
+                                h = max(abs(nc - goal[0]), abs(nr - goal[1])) if heuristic == "chebyshev" else (abs(nc - goal[0]) + abs(nr - goal[1]))
+                                f = tentative_g + h
+                                f_score[neighbor] = f
+                                heapq.heappush(open_set, (f, h, neighbor))
 
         return None  # Không tìm thấy đường đi do bị chặn hoàn toàn
 

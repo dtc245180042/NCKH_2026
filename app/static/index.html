@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body class="light-theme">
+    <!-- Container Thông Báo Nổi Toast -->
+    <div id="toast-container" class="toast-container"></div>
     <!-- ========================================== -->
     <!-- 1. MÀN HÌNH ĐĂNG NHẬP CHUẨN GIAO DIỆN SÁNG (SPLIT SCREEN) -->
     <!-- ========================================== -->
@@ -210,6 +212,9 @@
                     <button class="nav-tab" data-tab="tab-ai-vision">
                         <i class="fa-solid fa-brain"></i> Thị Giác AI & ByteTrack
                     </button>
+                    <button class="nav-tab" data-tab="tab-plc-rfid">
+                        <i class="fa-solid fa-industry"></i> PLC Modbus & RFID UHF
+                    </button>
                     <button class="nav-tab" data-tab="tab-iot-amr">
                         <i class="fa-solid fa-microchip"></i> Điều Khiển IoT & Robot AMR
                     </button>
@@ -251,8 +256,8 @@
                     <div class="white-card canvas-card">
                         <div class="card-head">
                             <div class="card-title-group">
-                                <h3>Digital Twin Kho Hàng 2D (Thời Gian Thực)</h3>
-                                <p>Mô phỏng đa tác tử: Băng chuyền thông minh, 3 Cổng phân loại IoT và Xe tự hành AMR</p>
+                                <h3 id="simulation-view-title">Digital Twin Kho Hàng Thông Minh (SCADA Realtime)</h3>
+                                <p>Bản sao số công nghiệp: Băng chuyền con lăn cơ khí, 3 Cổng phân loại IoT và Xe tự hành AMR (A*)</p>
                             </div>
                             <div class="card-actions">
                                 <div class="fps-badge">
@@ -260,6 +265,15 @@
                                 </div>
                                 <button class="btn-light-action" id="btn-spawn-pkg">
                                     <i class="fa-solid fa-plus"></i> Tạo Kiện Hàng
+                                </button>
+                                <button class="btn-light-action" id="btn-toggle-auto-spawn" style="background:#eff6ff; color:#1d4ed8; font-weight:700;">
+                                    <i class="fa-solid fa-repeat"></i> Tự Động Sinh: BẬT
+                                </button>
+                                <button class="btn-light-action" id="btn-open-inject-modal" style="background:#f0fdf4; color:#15803d; font-weight:700;">
+                                    <i class="fa-solid fa-box-open"></i> + Kiện Tỉnh Thành
+                                </button>
+                                <button class="btn-light-action" id="btn-export-excel-quick" style="background:#fef2f2; color:#b91c1c; font-weight:700;">
+                                    <i class="fa-solid fa-file-excel"></i> Xuất Excel (.xlsx)
                                 </button>
                                 <button class="btn-light-action active" id="btn-toggle-cam">
                                     <i class="fa-solid fa-crosshairs"></i> AI Bounding Box
@@ -276,23 +290,31 @@
                                 <button class="btn-light-action" id="btn-clear-obs">
                                     <i class="fa-solid fa-eraser"></i> Xóa Vật Cản
                                 </button>
+                                <button class="btn-light-action" id="btn-toolbar-mute" title="Bật/Tắt Còi Báo Động">
+                                    <i class="fa-solid fa-volume-high"></i> Còi Báo
+                                </button>
                             </div>
                         </div>
 
                         <!-- Banner Cảnh Báo Kẹt Cổng (Anti-jam Emergency) -->
                         <div id="canvas-jam-banner" class="jam-emergency-banner" style="display: none;">
-                            <div>
-                                <i class="fa-solid fa-triangle-exclamation"></i>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-triangle-exclamation" style="font-size: 1.25rem;"></i>
                                 <span><strong>CẢNH BÁO KẸT CỔNG PHÂN LOẠI (GATE JAM ALERT):</strong> Đã dừng khẩn cấp băng chuyền để bảo vệ cơ khí!</span>
                             </div>
-                            <button id="btn-clear-jam-banner" class="btn-clear-jam">
-                                <i class="fa-solid fa-wrench"></i> Khôi Phục Hoạt Động
-                            </button>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <button id="btn-toggle-siren-mute" class="btn-siren-mute">
+                                    <i class="fa-solid fa-volume-high"></i> Tắt Còi Báo
+                                </button>
+                                <button id="btn-clear-jam-banner" class="btn-clear-jam">
+                                    <i class="fa-solid fa-wrench"></i> Khôi Phục Hoạt Động
+                                </button>
+                            </div>
                         </div>
 
-                        <!-- Canvas Frame -->
+                        <!-- Canvas Frame (High-Fidelity SCADA Industrial Canvas) -->
                         <div class="canvas-frame">
-                            <canvas id="warehouse-canvas" width="920" height="460"></canvas>
+                            <canvas id="warehouse-canvas" width="960" height="480"></canvas>
                         </div>
 
                         <!-- Legend -->
@@ -370,6 +392,9 @@
                                 <p>Nhận diện kiện hàng bằng YOLOv12n và duy trì định danh với bộ lọc Kalman 8 chiều</p>
                             </div>
                             <div class="card-actions">
+                                <button class="btn-light-action" id="btn-toggle-ab-mode" style="background:#eff6ff; color:#1d4ed8; font-weight:700;">
+                                    <i class="fa-solid fa-arrows-split-up-and-left"></i> Đối Sánh A/B: BẬT
+                                </button>
                                 <button class="btn-test-occlusion" id="btn-toggle-occlusion">
                                     <i class="fa-solid fa-cloud-sun"></i> Giả Lập Che Khuất (Occlusion Test)
                                 </button>
@@ -517,13 +542,31 @@
                             </div>
                         </div>
 
-                        <div style="margin-top:1.25rem; display:flex; gap:0.75rem;">
-                            <button class="btn-test-occlusion" id="btn-tab-test-jam">
-                                <i class="fa-solid fa-triangle-exclamation"></i> Giả Lập Kẹt Cổng 2 (3 Giây)
-                            </button>
-                            <button class="btn-light-action" id="btn-tab-clear-jam">
-                                <i class="fa-solid fa-wrench"></i> Khôi Phục Kẹt Cổng
-                            </button>
+                        <div class="incident-control-box" style="margin-top:1.25rem; padding:1.25rem; background:#f8fafc; border-radius:10px; border:1px solid #e2e8f0;">
+                            <h5 style="margin-bottom:0.75rem; color:#0f172a; font-weight:700;"><i class="fa-solid fa-hand-holding-hand text-blue"></i> Bảng Can Thiệp Thủ Công & Xử Lý Sự Cố (Manual Override)</h5>
+                            <div style="display:flex; flex-wrap:wrap; gap:0.6rem;">
+                                <button class="btn-light-action" id="btn-emergency-stop" style="background:#fee2e2; color:#b91c1c; border-color:#fca5a5; font-weight:700;">
+                                    <i class="fa-solid fa-octagon-exclamation"></i> E-STOP Toàn Bộ Kho
+                                </button>
+                                <button class="btn-light-action" id="btn-jam-clear-reverse" style="background:#fef3c7; color:#b45309; border-color:#fcd34d; font-weight:700;">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Gỡ Kẹt Băng Tải (Đảo chiều 2s)
+                                </button>
+                                <button class="btn-light-action" id="btn-force-gate-1" style="background:#eff6ff; color:#1d4ed8; font-weight:600;">
+                                    <i class="fa-solid fa-angles-down"></i> Force Cổng 1 (Bắc)
+                                </button>
+                                <button class="btn-light-action" id="btn-force-gate-2" style="background:#eff6ff; color:#1d4ed8; font-weight:600;">
+                                    <i class="fa-solid fa-angles-down"></i> Force Cổng 2 (Trung)
+                                </button>
+                                <button class="btn-light-action" id="btn-force-gate-3" style="background:#eff6ff; color:#1d4ed8; font-weight:600;">
+                                    <i class="fa-solid fa-angles-down"></i> Force Cổng 3 (Nam)
+                                </button>
+                                <button class="btn-light-action" id="btn-force-amr-dock" style="background:#f0fdf4; color:#15803d; font-weight:600;">
+                                    <i class="fa-solid fa-charging-station"></i> Điều AMR-01 Về Sạc
+                                </button>
+                                <button class="btn-light-action" id="btn-resume-amr" style="background:#f0fdf4; color:#15803d; font-weight:600;">
+                                    <i class="fa-solid fa-play"></i> Khôi Phục AMR
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -640,21 +683,31 @@
             <!-- TAB 4: SYSTEM LOGS -->
             <div id="tab-logs" class="tab-pane">
                 <div class="white-card">
-                    <div class="card-head">
+                    <div class="card-head flex-between">
                         <div class="card-title-group">
-                            <h3>Nhật Ký Kiểm Toán An Ninh (System Logs)</h3>
-                            <p>Lưu vết đầy đủ các sự kiện truy cập, đăng nhập và thay đổi dữ liệu</p>
+                            <h3>Nhật Ký Kiểm Toán An Ninh & Phần Cứng (Non-repudiation Audit Trail)</h3>
+                            <p>Lưu vết đầy đủ các sự kiện PLC, RFID, AI và thao tác người dùng kèm mã băm SHA-256 bảo đảm tính toàn vẹn</p>
+                        </div>
+                        <div style="display:flex; gap:0.5rem;">
+                            <button class="btn-light-action" id="btn-refresh-logs">
+                                <i class="fa-solid fa-arrows-rotate"></i> Làm Mới Logs
+                            </button>
+                            <button class="btn-blue-primary" id="btn-export-excel-logs" style="background:#15803d;">
+                                <i class="fa-solid fa-file-excel"></i> Tải Báo Cáo Excel (.xlsx)
+                            </button>
                         </div>
                     </div>
                     <div class="table-wrap">
                         <table class="modern-light-table font-mono">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
+                                    <th>Mã ID</th>
                                     <th>Thời Gian</th>
-                                    <th>User ID</th>
+                                    <th>Tác Nhân (Actor)</th>
+                                    <th>Cấp Độ</th>
                                     <th>Hành Động</th>
                                     <th>Chi Tiết Sự Kiện</th>
+                                    <th>Mã Băm Toàn Vẹn (SHA-256)</th>
                                 </tr>
                             </thead>
                             <tbody id="logs-table-body">
@@ -828,6 +881,253 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TAB TRỤ CỘT 1: PLC MODBUS TCP & RFID UHF INDUSTRIAL AUTOMATION -->
+            <div id="tab-plc-rfid" class="tab-pane">
+                <div class="plc-rfid-container">
+                    <!-- Top Bar Action -->
+                    <div class="analytics-header-card">
+                        <div class="analytics-header-left">
+                            <div class="analytics-badge-icon" style="background:#0284c7; color:#fff;"><i class="fa-solid fa-industry"></i></div>
+                            <div>
+                                <h2>Tự Động Hóa Công Nghiệp: Siemens PLC S7-1200 & Cổng Quét RFID UHF (Trụ Cột 1)</h2>
+                                <p>Giao thức Modbus TCP chuẩn công nghiệp (Port 5020), Bộ điều khiển CPU 1214C DC/DC/DC và Thuật toán chống va chạm vô tuyến Q-Algorithm (EPC Gen2)</p>
+                            </div>
+                        </div>
+                        <div class="analytics-header-actions">
+                            <div class="plc-status-pill">
+                                <span class="pulse-dot-green" id="plc-comm-status-dot"></span>
+                                <span id="plc-comm-text">Modbus TCP: 127.0.0.1:5020 • Online</span>
+                            </div>
+                            <button class="btn-light-action" id="btn-toggle-plc-mode">
+                                <i class="fa-solid fa-power-off"></i> Đổi Mode <strong id="lbl-plc-mode">RUN</strong>
+                            </button>
+                            <button class="btn-blue-primary" id="btn-trigger-rfid-burst">
+                                <i class="fa-solid fa-bolt"></i> Bắn Thử 50 Thẻ RFID (Burst Test)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Layout 2 cột: Trái là Tủ PLC & Bảng Modbus, Phải là Cổng RFID UHF -->
+                    <div class="plc-rfid-grid">
+                        <!-- Cột Trái: PLC Siemens S7-1200 Cabinet & Modbus Register Table -->
+                        <div class="plc-column">
+                            <!-- Siemens S7-1200 Graphic Enclosure -->
+                            <div class="white-card siemens-plc-card">
+                                <div class="plc-chassis">
+                                    <div class="plc-top-header">
+                                        <div class="siemens-brand">SIEMENS</div>
+                                        <div class="plc-model">SIMATIC S7-1200 <small>CPU 1214C DC/DC/DC</small></div>
+                                        <div class="plc-mac-badge">IP: 192.168.0.10:5020</div>
+                                    </div>
+
+                                    <div class="plc-middle-body">
+                                        <!-- CPU LEDs -->
+                                        <div class="plc-led-panel">
+                                            <div class="plc-led-item">
+                                                <div class="plc-led led-green active" id="plc-led-run"></div>
+                                                <span>RUN/STOP</span>
+                                            </div>
+                                            <div class="plc-led-item">
+                                                <div class="plc-led led-red" id="plc-led-error"></div>
+                                                <span>ERROR</span>
+                                            </div>
+                                            <div class="plc-led-item">
+                                                <div class="plc-led led-yellow" id="plc-led-maint"></div>
+                                                <span>MAINT</span>
+                                            </div>
+                                        </div>
+
+                                        <!-- Terminal Strip DI 0.0 - 0.7 -->
+                                        <div class="plc-terminal-block">
+                                            <div class="terminal-title">DIGITAL INPUTS (24V DC DI a)</div>
+                                            <div class="terminal-led-row" id="plc-di-leds">
+                                                <!-- Dynamic DI LEDs -->
+                                            </div>
+                                        </div>
+
+                                        <!-- Terminal Strip DQ 0.0 - 0.7 -->
+                                        <div class="plc-terminal-block">
+                                            <div class="terminal-title">DIGITAL OUTPUTS (24V DC DQ b)</div>
+                                            <div class="terminal-led-row" id="plc-dq-leds">
+                                                <!-- Dynamic DQ LEDs -->
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="plc-bottom-door">
+                                        <div class="plc-cycle-info">
+                                            <i class="fa-solid fa-clock-rotate-left"></i> Chu kỳ quét PLC: <strong id="plc-scan-time-txt">12 ms</strong> | Bộ nhớ: <strong>100 KB Work Memory</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Modbus Live Register Monitor Table -->
+                            <div class="white-card">
+                                <div class="card-head flex-between">
+                                    <div class="card-title-group">
+                                        <h4>Giám Sát Thanh Ghi Modbus TCP Thời Gian Thực</h4>
+                                        <p>Bản đồ địa chỉ Coils (0xxxx), Discrete Inputs (1xxxx), Holding Registers (4xxxx)</p>
+                                    </div>
+                                    <span class="badge-soft-blue">Closed-Loop HIL Active</span>
+                                </div>
+
+                                <div class="modbus-tabs-nav">
+                                    <button class="modbus-tab-btn active" data-modbus-sub="tab-modbus-coils">Coils (DQ 0.0-0.7)</button>
+                                    <button class="modbus-tab-btn" data-modbus-sub="tab-modbus-di">Discrete Inputs (DI 0.0-0.7)</button>
+                                    <button class="modbus-tab-btn" data-modbus-sub="tab-modbus-hr">Holding Registers (40001-40007)</button>
+                                </div>
+
+                                <!-- Modbus Sub-tab Coils -->
+                                <div id="tab-modbus-coils" class="modbus-subpane active">
+                                    <table class="modern-light-table font-mono" style="font-size: 0.85rem;">
+                                        <thead>
+                                            <tr>
+                                                <th>Địa Chỉ</th>
+                                                <th>Pin PLC</th>
+                                                <th>Tên Thiết Bị / Chức Năng</th>
+                                                <th>Giá Trị</th>
+                                                <th>Cưỡng Bức (Force)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="modbus-coils-tbody">
+                                            <!-- Dynamic Coils -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Modbus Sub-tab DI -->
+                                <div id="tab-modbus-di" class="modbus-subpane">
+                                    <table class="modern-light-table font-mono" style="font-size: 0.85rem;">
+                                        <thead>
+                                            <tr>
+                                                <th>Địa Chỉ</th>
+                                                <th>Pin PLC</th>
+                                                <th>Tên Cảm Biến Quang / Nút Bấm</th>
+                                                <th>Trạng Thái</th>
+                                                <th>Loại Tiếp Điểm</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="modbus-di-tbody">
+                                            <!-- Dynamic DI -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Modbus Sub-tab HR -->
+                                <div id="tab-modbus-hr" class="modbus-subpane">
+                                    <table class="modern-light-table font-mono" style="font-size: 0.85rem;">
+                                        <thead>
+                                            <tr>
+                                                <th>Địa Chỉ</th>
+                                                <th>Tên Thông Số Hệ Thống</th>
+                                                <th>Giá Trị Thực</th>
+                                                <th>Đơn Vị</th>
+                                                <th>Ghi Thanh Ghi (Write)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="modbus-hr-tbody">
+                                            <!-- Dynamic HR -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cột Phải: Cổng Quét RFID UHF & Q-Algorithm Analytics -->
+                        <div class="rfid-column">
+                            <!-- Portal Graphic & RF Wave Visualizer -->
+                            <div class="white-card rfid-portal-visual-card">
+                                <div class="card-head flex-between">
+                                    <div class="card-title-group">
+                                        <h4>Cổng Vòm RFID UHF Long-Range Portal (EPC Gen2)</h4>
+                                        <p>Đầu đọc 4-Port Impinj Speedway R420 • Phân cực tròn • Tần số 920.5 MHz</p>
+                                    </div>
+                                    <div class="portal-badge-active" id="rfid-active-badge">
+                                        <span class="pulse-rf-dot"></span> SÓNG RF ĐANG PHÁT (30 dBm)
+                                    </div>
+                                </div>
+
+                                <div class="rf-portal-graphic">
+                                    <div class="rf-arch-frame">
+                                        <div class="rf-antenna ant-left-top"><i class="fa-solid fa-satellite-dish"></i> ANT 1</div>
+                                        <div class="rf-antenna ant-left-bottom"><i class="fa-solid fa-satellite-dish"></i> ANT 2</div>
+                                        
+                                        <!-- Pulsing RF Waves -->
+                                        <div class="rf-wave-zone">
+                                            <div class="rf-circle rf-c1"></div>
+                                            <div class="rf-circle rf-c2"></div>
+                                            <div class="rf-circle rf-c3"></div>
+                                            <div class="rf-center-beam">
+                                                <i class="fa-solid fa-tower-broadcast"></i>
+                                                <span>920.5 MHz UHF BEAM</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="rf-antenna ant-right-top"><i class="fa-solid fa-satellite-dish"></i> ANT 3</div>
+                                        <div class="rf-antenna ant-right-bottom"><i class="fa-solid fa-satellite-dish"></i> ANT 4</div>
+                                    </div>
+                                </div>
+
+                                <!-- Q-Algorithm Gauges -->
+                                <div class="q-algo-metrics-grid">
+                                    <div class="q-metric-box">
+                                        <span class="q-lbl">HỆ SỐ Q (Q-FACTOR)</span>
+                                        <span class="q-val text-blue" id="rfid-q-val">4.0</span>
+                                        <span class="q-sub" id="rfid-slots-txt">Khe (Slots): 16</span>
+                                    </div>
+                                    <div class="q-metric-box">
+                                        <span class="q-lbl">TỶ LỆ VA CHẠM SÓNG</span>
+                                        <span class="q-val text-orange" id="rfid-collision-rate">0.0%</span>
+                                        <span class="q-sub" id="rfid-collisions-txt">Va chạm: 0</span>
+                                    </div>
+                                    <div class="q-metric-box">
+                                        <span class="q-lbl">TỐC ĐỘ ĐỌC (THROUGHPUT)</span>
+                                        <span class="q-val text-green" id="rfid-throughput-val">120 tag/s</span>
+                                        <span class="q-sub">Bulk Inventory Burst</span>
+                                    </div>
+                                    <div class="q-metric-box">
+                                        <span class="q-lbl">TỔNG LẦN QUÉT THẺ</span>
+                                        <span class="q-val text-purple" id="rfid-total-scans">0</span>
+                                        <span class="q-sub">SGTIN-96 & TID Monza</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Real-time Tag Stream List -->
+                            <div class="white-card">
+                                <div class="card-head flex-between">
+                                    <div>
+                                        <h4>Luồng Thẻ RFID Quét Được Theo Thời Gian Thực</h4>
+                                        <p>Định dạng mã hàng GS1 SGTIN-96 và Mã định danh duy nhất của chip TID (Impinj Monza R6)</p>
+                                    </div>
+                                    <span class="badge-soft-green" id="rfid-tag-stream-count">0 Thẻ trong bộ đệm</span>
+                                </div>
+
+                                <div class="table-wrap" style="max-height: 280px; overflow-y: auto;">
+                                    <table class="modern-light-table font-mono" style="font-size: 0.82rem;">
+                                        <thead>
+                                            <tr>
+                                                <th>EPC (SGTIN-96)</th>
+                                                <th>TID (Monza R6)</th>
+                                                <th>Kiện Hàng</th>
+                                                <th>Khu Vực</th>
+                                                <th>RSSI</th>
+                                                <th>Ăng-ten</th>
+                                                <th>Lần Đọc</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="rfid-tags-stream-tbody">
+                                            <!-- Dynamic stream rows -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
@@ -918,8 +1218,30 @@
                     </div>
 
                     <div class="form-group-light">
-                        <label>Điểm đến (Mã tỉnh hoặc bưu chính)</label>
-                        <input type="text" id="new-pkg-dest" required placeholder="ví dụ: Hà Nội hoặc HAN">
+                        <label>Tỉnh / Thành phố đích (Phân loại 2 cấp)</label>
+                        <select id="new-pkg-dest" style="width:100%; padding:0.65rem; border-radius:6px; border:1px solid #cbd5e1; font-weight:600;">
+                            <optgroup label="Miền Bắc (Cổng 1 - Máng 1)">
+                                <option value="Hà Nội" selected>Hà Nội (Mã 100000 - Kệ RACK-HN)</option>
+                                <option value="Hải Phòng">Hải Phòng (Mã 180000 - Kệ RACK-HP)</option>
+                                <option value="Quảng Ninh">Quảng Ninh (Mã 200000 - Kệ RACK-QN)</option>
+                            </optgroup>
+                            <optgroup label="Miền Trung (Cổng 2 - Máng 2)">
+                                <option value="Đà Nẵng">Đà Nẵng (Mã 550000 - Kệ RACK-DN)</option>
+                                <option value="Huế">Thừa Thiên Huế (Mã 530000 - Kệ RACK-HUE)</option>
+                                <option value="Khánh Hòa">Khánh Hòa (Mã 650000 - Kệ RACK-KH)</option>
+                            </optgroup>
+                            <optgroup label="Miền Nam (Cổng 3 - Máng 3)">
+                                <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh (Mã 700000 - Kệ RACK-HCM)</option>
+                                <option value="Bình Dương">Bình Dương (Mã 820000 - Kệ RACK-BD)</option>
+                                <option value="Cần Thơ">Cần Thơ (Mã 900000 - Kệ RACK-CT)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group-light" style="display:flex; align-items:center; gap:8px;">
+                        <input type="checkbox" id="new-pkg-spawn-direct" checked style="width:18px; height:18px;">
+                        <label for="new-pkg-spawn-direct" style="margin:0; font-weight:600; color:#1d4ed8; cursor:pointer;">
+                            Bơm kiện lên băng chuyền Digital Twin ngay lập tức
+                        </label>
                     </div>
 
                     <div id="modal-pkg-error" class="error-light-alert" style="display: none;">

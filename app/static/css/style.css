@@ -1392,6 +1392,32 @@ body.light-theme {
     background: #dc2626;
 }
 
+.btn-siren-mute {
+    background: #ffffff;
+    color: #b91c1c;
+    border: 1.5px solid #ef4444;
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.btn-siren-mute:hover {
+    background: #fef2f2;
+}
+
+.btn-siren-mute.muted {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #cbd5e1;
+}
+
 .iot-amr-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1683,4 +1709,542 @@ body.light-theme {
 .abc-zone-desc {
     font-size: 0.76rem;
     color: var(--text-muted);
+}
+
+
+
+
+/* ==========================================================================
+   TRỤ CỘT 1: SIEMENS S7-1200 PLC & RFID UHF PORTAL INDUSTRIAL SCADA STYLES
+   ========================================================================== */
+
+.plc-rfid-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.plc-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 6px 14px;
+    border-radius: var(--radius-pill);
+    font-size: 0.82rem;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+.pulse-dot-green {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #16a34a;
+    box-shadow: 0 0 8px #16a34a;
+    animation: blinkGlow 1.4s infinite;
+}
+
+@keyframes blinkGlow {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.85); }
+}
+
+.plc-rfid-grid {
+    display: grid;
+    grid-template-columns: 1.08fr 0.92fr;
+    gap: 1.5rem;
+}
+
+.plc-column, .rfid-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* SIEMENS S7-1200 HARDWARE CHASSIS */
+.siemens-plc-card {
+    padding: 1.25rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+}
+
+.plc-chassis {
+    background: linear-gradient(160deg, #1e293b 0%, #0f172a 100%);
+    border: 2px solid #334155;
+    border-radius: 10px;
+    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.1), 0 12px 24px -4px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    color: #f1f5f9;
+}
+
+.plc-top-header {
+    background: #090d16;
+    padding: 12px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #00646e;
+}
+
+.siemens-brand {
+    font-size: 1.25rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    color: #00a396;
+    text-shadow: 0 0 10px rgba(0, 163, 150, 0.4);
+}
+
+.plc-model {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #e2e8f0;
+}
+
+.plc-model small {
+    display: block;
+    font-size: 0.72rem;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.plc-mac-badge {
+    background: #1e293b;
+    border: 1px solid #475569;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: #38bdf8;
+}
+
+.plc-middle-body {
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* CPU LEDs */
+.plc-led-panel {
+    display: flex;
+    gap: 24px;
+    background: rgba(15, 23, 42, 0.6);
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #334155;
+}
+
+.plc-led-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+}
+
+.plc-led {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #334155;
+    transition: all 0.2s ease;
+}
+
+.plc-led.led-green.active {
+    background: #22c55e;
+    box-shadow: 0 0 10px #22c55e, inset 0 0 2px #fff;
+}
+
+.plc-led.led-red.active {
+    background: #ef4444;
+    box-shadow: 0 0 10px #ef4444, inset 0 0 2px #fff;
+}
+
+.plc-led.led-yellow.active {
+    background: #f59e0b;
+    box-shadow: 0 0 10px #f59e0b, inset 0 0 2px #fff;
+}
+
+/* TERMINAL BLOCKS (DI & DQ) */
+.plc-terminal-block {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid #475569;
+    border-radius: 6px;
+    padding: 10px 14px;
+}
+
+.terminal-title {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #cbd5e1;
+    margin-bottom: 8px;
+}
+
+.terminal-led-row {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+}
+
+.pin-cell {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 4px;
+    padding: 6px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.68rem;
+    font-family: monospace;
+    color: #94a3b8;
+    transition: all 0.15s ease;
+}
+
+.pin-cell.active-input {
+    border-color: #38bdf8;
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+}
+
+.pin-cell.active-output {
+    border-color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    color: #4ade80;
+}
+
+.pin-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #334155;
+}
+
+.active-input .pin-indicator {
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
+}
+
+.active-output .pin-indicator {
+    background: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+}
+
+.plc-bottom-door {
+    background: #090d16;
+    padding: 8px 18px;
+    border-top: 1px solid #334155;
+    font-size: 0.76rem;
+    color: #94a3b8;
+}
+
+/* MODBUS MONITOR SUB-TABS */
+.modbus-tabs-nav {
+    display: flex;
+    gap: 8px;
+    margin: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 8px;
+}
+
+.modbus-tab-btn {
+    background: #f1f5f9;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 6px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modbus-tab-btn.active {
+    background: var(--blue-primary);
+    border-color: var(--blue-primary);
+    color: #ffffff;
+}
+
+.modbus-subpane {
+    display: none;
+}
+
+.modbus-subpane.active {
+    display: block;
+}
+
+.btn-force-toggle {
+    padding: 3px 10px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+}
+
+.btn-force-on {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+}
+
+.btn-force-on:hover {
+    background: #22c55e;
+    color: #fff;
+}
+
+.btn-force-off {
+    background: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fca5a5;
+}
+
+.btn-force-off:hover {
+    background: #ef4444;
+    color: #fff;
+}
+
+/* RFID PORTAL GRAPHIC & PULSING WAVES */
+.portal-badge-active {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    padding: 4px 12px;
+    border-radius: var(--radius-pill);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.pulse-rf-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2563eb;
+    box-shadow: 0 0 10px #2563eb;
+    animation: blinkGlow 1s infinite;
+}
+
+.rf-portal-graphic {
+    background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+    border: 1px solid #334155;
+    border-radius: 8px;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    margin: 12px 0;
+}
+
+.rf-arch-frame {
+    width: 90%;
+    height: 160px;
+    border: 3px dashed rgba(56, 189, 248, 0.4);
+    border-radius: 12px 12px 0 0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rf-antenna {
+    position: absolute;
+    background: #0284c7;
+    color: #ffffff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    box-shadow: 0 0 12px rgba(2, 132, 199, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ant-left-top { top: 12px; left: -14px; }
+.ant-left-bottom { bottom: 12px; left: -14px; }
+.ant-right-top { top: 12px; right: -14px; }
+.ant-right-bottom { bottom: 12px; right: -14px; }
+
+.rf-wave-zone {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rf-circle {
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid rgba(56, 189, 248, 0.6);
+    animation: rfExpand 2.2s infinite ease-out;
+}
+
+.rf-c1 { width: 40px; height: 40px; animation-delay: 0s; }
+.rf-c2 { width: 80px; height: 80px; animation-delay: 0.7s; }
+.rf-c3 { width: 120px; height: 120px; animation-delay: 1.4s; }
+
+@keyframes rfExpand {
+    0% { transform: scale(0.3); opacity: 0.9; }
+    100% { transform: scale(1.3); opacity: 0; }
+}
+
+.rf-center-beam {
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: #38bdf8;
+    font-size: 0.82rem;
+    font-weight: 800;
+    text-shadow: 0 0 10px #38bdf8;
+}
+
+.rf-center-beam i {
+    font-size: 1.6rem;
+}
+
+/* Q-ALGORITHM METRICS GRID */
+.q-algo-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.q-metric-box {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.q-lbl {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+}
+
+.q-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-family: monospace;
+}
+
+.q-sub {
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+}
+
+.badge-soft-blue {
+    background: #e0f2fe;
+    color: #0369a1;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+}
+
+.badge-soft-green {
+    background: #dcfce7;
+    color: #15803d;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: var(--radius-sm);
+}
+
+/* ==========================================================================
+   TOAST NOTIFICATION SYSTEM
+   ========================================================================== */
+.toast-container {
+    position: fixed;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 99999;
+    pointer-events: none;
+}
+
+.toast-msg {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(15, 23, 42, 0.08);
+    pointer-events: auto;
+    animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    transition: all 0.25s ease;
+}
+
+.toast-msg i {
+    font-size: 1.1rem;
+}
+
+.toast-msg.toast-success {
+    border-left: 4px solid #10b981;
+}
+.toast-msg.toast-success i {
+    color: #10b981;
+}
+
+.toast-msg.toast-warning {
+    border-left: 4px solid #f59e0b;
+}
+.toast-msg.toast-warning i {
+    color: #f59e0b;
+}
+
+.toast-msg.toast-info {
+    border-left: 4px solid #3b82f6;
+}
+.toast-msg.toast-info i {
+    color: #3b82f6;
+}
+
+.toast-msg.toast-error {
+    border-left: 4px solid #ef4444;
+}
+.toast-msg.toast-error i {
+    color: #ef4444;
+}
+
+.toast-msg.fade-out {
+    opacity: 0;
+    transform: translateY(-10px);
+}
+
+@keyframes toastSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-15px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
