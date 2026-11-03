@@ -209,6 +209,9 @@
                     <button class="nav-tab active" data-tab="tab-canvas">
                         <i class="fa-solid fa-cubes-stacked"></i> Digital Twin 2D
                     </button>
+                    <button class="nav-tab" data-tab="tab-3d" id="nav-tab-3d">
+                        <i class="fa-solid fa-cube"></i> Digital Twin 3D AI
+                    </button>
                     <button class="nav-tab" data-tab="tab-ai-vision">
                         <i class="fa-solid fa-brain"></i> Thị Giác AI & ByteTrack
                     </button>
@@ -260,6 +263,10 @@
                                 <p>Bản sao số công nghiệp: Băng chuyền con lăn cơ khí, 3 Cổng phân loại IoT và Xe tự hành AMR (A*)</p>
                             </div>
                             <div class="card-actions">
+                                <div class="view-mode-toggle-group">
+                                    <button class="btn-toggle-view active" id="btn-toggle-2d"><i class="fa-solid fa-layer-group"></i> 2D SCADA</button>
+                                    <button class="btn-toggle-view" id="btn-toggle-3d"><i class="fa-solid fa-cube"></i> 3D AI Twin</button>
+                                </div>
                                 <div class="fps-badge">
                                     <span class="fps-dot"></span> 60 FPS Live
                                 </div>
@@ -313,8 +320,14 @@
                         </div>
 
                         <!-- Canvas Frame (High-Fidelity SCADA Industrial Canvas) -->
-                        <div class="canvas-frame">
+                        <div class="canvas-frame" id="canvas-2d-frame">
                             <canvas id="warehouse-canvas" width="960" height="480"></canvas>
+                        </div>
+
+                        <!-- 3D AI Digital Twin Frame (Three.js Industrial Simulation) -->
+                        <div class="canvas-3d-frame" id="canvas-3d-frame" style="display: none; position: relative; border-radius: 8px; overflow: hidden; height: 580px; border: 1px solid #e2e8f0; background: #ffffff;">
+                            <iframe id="iframe-3d-sim" src="/static/simulation_3d.html" style="width: 100%; height: 100%; border: none;"></iframe>
+                        </div>
                         </div>
 
                         <!-- Legend -->
@@ -1285,6 +1298,9 @@
         </div>
     </div>
 
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="/static/js/warehouse_3d.js"></script>
     <script src="/static/js/app.js"></script>
 </body>
 </html>

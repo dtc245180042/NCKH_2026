@@ -198,6 +198,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initCreatePackageModal();
     initSlotModal();
     initAnalytics();
+    init3DViewControls();
 
     const urlParams = new URLSearchParams(window.location.search);
     const tokenParam = urlParams.get("token");
@@ -738,6 +739,9 @@ function initCanvasEngine() {
         ws.onmessage = (event) => {
             try {
                 const snapshot = JSON.parse(event.data);
+                if (window.Warehouse3D && window.Warehouse3D.initialized) {
+                    window.Warehouse3D.updateState(snapshot);
+                }
                 if (snapshot.packages) {
                     AppState.itemsOnBelt = snapshot.packages;
                 }
@@ -2656,5 +2660,79 @@ async function loadLogs() {
         }).join("");
     } catch (e) {
         console.warn("Lỗi nạp nhật ký kiểm toán:", e);
+    }
+}
+
+// ==========================================================================
+// DIEU KHIEN CHUYEN DOI CHE DO 2D SCADA <-> 3D AI DIGITAL TWIN
+// ==========================================================================
+function init3DViewControls() {
+    const btnToggle2D = document.getElementById("btn-toggle-2d");
+    const btnToggle3D = document.getElementById("btn-toggle-3d");
+    const frame2D = document.getElementById("canvas-2d-frame");
+    const frame3D = document.getElementById("canvas-3d-frame");
+    const navTab3D = document.getElementById("nav-tab-3d");
+    const navTab2D = document.querySelector('[data-tab="tab-canvas"]');
+
+    function switchTo3D() {
+        if (btnToggle2D) btnToggle2D.classList.remove("active");
+        if (btnToggle3D) btnToggle3D.classList.add("active");
+        if (frame2D) frame2D.style.display = "none";
+        if (frame3D) {
+            frame3D.style.display = "block";
+            if (window.Warehouse3D) {
+                if (!window.Warehouse3D.initialized) {
+                    window.Warehouse3D.init("warehouse-3d-container");
+                } else {
+                    window.Warehouse3D.resize();
+                }
+            }
+        }
+    }
+
+    function switchTo2D() {
+        if (btnToggle3D) btnToggle3D.classList.remove("active");
+        if (btnToggle2D) btnToggle2D.classList.add("active");
+        if (frame3D) frame3D.style.display = "none";
+        if (frame2D) frame2D.style.display = "block";
+    }
+
+    if (btnToggle3D) btnToggle3D.addEventListener("click", switchTo3D);
+    if (btnToggle2D) btnToggle2D.addEventListener("click", switchTo2D);
+
+    if (navTab3D) {
+        navTab3D.addEventListener("click", () => {
+            if (navTab2D) navTab2D.click();
+            switchTo3D();
+        });
+    }
+
+    // Camera preset buttons
+    const btnCamIso = document.getElementById("btn-cam-iso");
+    const btnCamTop = document.getElementById("btn-cam-top");
+    const btnCamFollow = document.getElementById("btn-cam-follow");
+
+    function setCamActive(btn) {
+        [btnCamIso, btnCamTop, btnCamFollow].forEach(b => { if (b) b.classList.remove("active"); });
+        if (btn) btn.classList.add("active");
+    }
+
+    if (btnCamIso) {
+        btnCamIso.addEventListener("click", () => {
+            setCamActive(btnCamIso);
+            if (window.Warehouse3D) window.Warehouse3D.setCameraView("iso");
+        });
+    }
+    if (btnCamTop) {
+        btnCamTop.addEventListener("click", () => {
+            setCamActive(btnCamTop);
+            if (window.Warehouse3D) window.Warehouse3D.setCameraView("top");
+        });
+    }
+    if (btnCamFollow) {
+        btnCamFollow.addEventListener("click", () => {
+            setCamActive(btnCamFollow);
+            if (window.Warehouse3D) window.Warehouse3D.setCameraView("follow");
+        });
     }
 }

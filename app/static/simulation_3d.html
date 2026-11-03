@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô Phỏng Kho 3D SCADA Realtime - NEXUSLOG</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 1. Header & Toolbar */
+        .app-bar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 20;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: #0284c7;
+            color: #ffffff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .brand-text h2 {
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+        .brand-text p {
+            font-size: 0.72rem;
+            color: #64748b;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+        .btn-action:hover {
+            background: #ffffff;
+            border-color: #0284c7;
+            color: #0284c7;
+        }
+        .btn-action.active {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+        }
+        .btn-speed {
+            padding: 6px 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* 2. Main 3D View & HUD Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #canvas-3d-wrapper {
+            flex: 1;
+            position: relative;
+            background: #f8fafc;
+        }
+
+        /* Camera Preset Floating Pills */
+        .cam-controls {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        .cam-pill {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid #cbd5e1;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.76rem;
+            font-weight: 700;
+            color: #334155;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+        }
+        .cam-pill.active {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+        }
+
+        /* 3. Cột Phải: Bảng chỉ số KPI & Dòng sự kiện */
+        .right-sidebar {
+            width: 320px;
+            background: #ffffff;
+            border-left: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.03);
+        }
+        .sidebar-section {
+            padding: 14px 16px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+        }
+        .kpi-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+        }
+        .kpi-val {
+            font-size: 1.25rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: #0f172a;
+        }
+        .kpi-lbl {
+            font-size: 0.68rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        /* AMR Status List */
+        .amr-status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 0.78rem;
+        }
+        .amr-tag {
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 0.7rem;
+        }
+        .tag-bac { background: #0284c7; }
+        .tag-trung { background: #9333ea; }
+        .tag-nam { background: #10b981; }
+
+        /* Event Logs */
+        .event-log-container {
+            flex: 1;
+            padding: 12px 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #fcfdfe;
+        }
+        .hud-log-row {
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: 0.74rem;
+            line-height: 1.35;
+            border-left: 3px solid #cbd5e1;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+        }
+        .hud-log-row.log-ai { border-left-color: #06b6d4; background: #ecfeff; }
+        .hud-log-row.log-sort { border-left-color: #f59e0b; background: #fefce8; }
+        .hud-log-row.log-amr { border-left-color: #0284c7; background: #eff6ff; }
+        .hud-log-row.log-storage { border-left-color: #10b981; background: #f0fdf4; }
+        .hud-log-row.log-export { border-left-color: #8b5cf6; background: #f5f3ff; font-weight: 700; }
+        .hud-log-row.log-alarm { border-left-color: #ef4444; background: #fef2f2; font-weight: 700; }
+        .log-time {
+            font-size: 0.68rem;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+            margin-right: 4px;
+        }
+
+        /* Banner cảnh báo không đường / kẹt cổng */
+        .toast-banner {
+            position: absolute;
+            top: 14px;
+            right: 340px;
+            background: #ef4444;
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+            z-index: 50;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.03); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. Thanh công cụ Header -->
+    <header class="app-bar">
+        <div class="brand-title">
+            <div class="brand-icon"><i class="fa-solid fa-cube"></i></div>
+            <div class="brand-text">
+                <h2>NEXUSLOG 3D</h2>
+                <p>Digital Twin SCADA Realtime (Lưới A* 36×22)</p>
+            </div>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="btn-action" id="btn-spawn"><i class="fa-solid fa-plus"></i> Tạo Kiện Hàng</button>
+            <button class="btn-action active" id="btn-auto-spawn"><i class="fa-solid fa-repeat"></i> Tự Động: BẬT</button>
+            <button class="btn-action" id="btn-flexible"><i class="fa-solid fa-shuffle"></i> Linh Hoạt: TẮT</button>
+            <button class="btn-action" id="btn-clear-obs"><i class="fa-solid fa-eraser"></i> Xóa Vật Cản</button>
+            <button class="btn-action" id="btn-test-jam" style="color:#b91c1c;"><i class="fa-solid fa-triangle-exclamation"></i> Test Kẹt Cổng</button>
+            <button class="btn-action" id="btn-test-occlusion" style="color:#0284c7;"><i class="fa-solid fa-cloud"></i> Test Che Khuất</button>
+            <button class="btn-action" id="btn-siren"><i class="fa-solid fa-volume-high"></i> Còi Báo</button>
+            
+            <!-- Tốc độ 1x / 2x / 4x -->
+            <div style="display:flex; gap:2px; margin-left:6px; background:#e2e8f0; padding:2px; border-radius:6px;">
+                <button class="btn-action btn-speed active" data-speed="1.0">1x</button>
+                <button class="btn-action btn-speed" data-speed="2.0">2x</button>
+                <button class="btn-action btn-speed" data-speed="4.0">4x</button>
+            </div>
+
+            <!-- Xuất / Nhập JSON -->
+            <button class="btn-action" id="btn-export-json" title="Xuất trạng thái JSON"><i class="fa-solid fa-file-export"></i> JSON</button>
+        </div>
+    </header>
+
+    <!-- Banner Cảnh Báo Không Có Đường -->
+    <div id="no-path-toast" class="toast-banner">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>CẢNH BÁO: Robot bị chặn kín đường đi! Hãy gỡ bớt vật cản.</span>
+    </div>
+
+    <!-- 2. Không gian 3D & Cột Chỉ Số -->
+    <main class="main-container">
+        <!-- Khung Three.js Canvas -->
+        <div id="canvas-3d-wrapper">
+            <!-- Camera Preset Floating Buttons -->
+            <div class="cam-controls">
+                <button class="cam-pill active" id="cam-iso"><i class="fa-solid fa-cubes"></i> Phối Cảnh</button>
+                <button class="cam-pill" id="cam-top"><i class="fa-solid fa-arrows-to-dot"></i> Nhìn Từ Trên</button>
+                <button class="cam-pill" id="cam-follow"><i class="fa-solid fa-video"></i> Bám Theo AMR</button>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Bảng KPI & Live Events -->
+        <aside class="right-sidebar">
+            <!-- 1. Chỉ số KPI -->
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <span>Chỉ Số Vận Hành (KPI)</span>
+                    <span style="font-size:0.7rem; color:#10b981;"><i class="fa-solid fa-circle"></i> Live 60 FPS</span>
+                </div>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-val" id="hud-processed">0</div>
+                        <div class="kpi-lbl">Đã xử lý (Kiện)</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-val" id="hud-waiting">0</div>
+                        <div class="kpi-lbl">Đang chờ máng</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-val" id="hud-accuracy">98.4%</div>
+                        <div class="kpi-lbl">Độ chính xác AI</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-val" id="hud-fps">60</div>
+                        <div class="kpi-lbl">Tốc độ khung hình (FPS)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Trạng thái 3 AMR -->
+            <div class="sidebar-section">
+                <div class="section-title">Đội Robot AMR Tự Hành</div>
+                <div class="amr-status-item">
+                    <div><span class="amr-tag tag-bac">AMR-01</span> <span>Miền Bắc</span></div>
+                    <span id="hud-amr-state-1" style="font-weight:600; color:#0284c7;">Rảnh</span>
+                </div>
+                <div class="amr-status-item">
+                    <div><span class="amr-tag tag-trung">AMR-02</span> <span>Miền Trung</span></div>
+                    <span id="hud-amr-state-2" style="font-weight:600; color:#9333ea;">Rảnh</span>
+                </div>
+                <div class="amr-status-item">
+                    <div><span class="amr-tag tag-nam">AMR-03</span> <span>Miền Nam</span></div>
+                    <span id="hud-amr-state-3" style="font-weight:600; color:#10b981;">Rảnh</span>
+                </div>
+            </div>
+
+            <!-- 3. Dòng sự kiện trực tiếp 7 mục -->
+            <div class="sidebar-section" style="padding-bottom:6px;">
+                <div class="section-title">Dòng Sự Kiện Thời Gian Thực (Live)</div>
+            </div>
+            <div class="event-log-container" id="hud-event-logs">
+                <!-- 7 sự kiện mới nhất sẽ được đổ vào đây -->
+            </div>
+        </aside>
+    </main>
+
+    <!-- Thư viện Three.js r128 chuẩn & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Nạp 2 lớp Engine tách bạch -->
+    <script src="/static/js/sim_engine_3d.js"></script>
+    <script src="/static/js/sim_render_3d.js"></script>
+
+    <!-- Khởi chạy và gắn sự kiện UI -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Kiểm tra hỗ trợ WebGL
+            try {
+                const canvas = document.createElement("canvas");
+                const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+                if (!gl) throw new Error("WebGL không được hỗ trợ");
+            } catch (err) {
+                document.body.innerHTML = `
+                    <div style="padding: 3rem; text-align: center; color: #dc2626;">
+                        <h2>Trình duyệt của bạn không hỗ trợ WebGL!</h2>
+                        <p>Vui lòng bật tăng tốc phần cứng (Hardware Acceleration) trong cài đặt trình duyệt để xem mô phỏng 3D.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // 1. Khởi tạo 2 lớp Engine
+            const logicEngine = new window.SimulationLogicEngine();
+            const renderer3D = new window.SimulationRenderer3D("canvas-3d-wrapper", logicEngine);
+
+            // 2. Gắn sự kiện các nút bấm trên thanh công cụ
+            // Tạo kiện hàng
+            document.getElementById("btn-spawn").addEventListener("click", () => {
+                logicEngine.spawnPackage();
+            });
+
+            // Bật/tắt tự động sinh
+            const btnAuto = document.getElementById("btn-auto-spawn");
+            btnAuto.addEventListener("click", () => {
+                logicEngine.autoSpawn = !logicEngine.autoSpawn;
+                btnAuto.classList.toggle("active", logicEngine.autoSpawn);
+                btnAuto.innerHTML = `<i class="fa-solid fa-repeat"></i> Tự Động: ${logicEngine.autoSpawn ? 'BẬT' : 'TẮT'}`;
+                logicEngine.logEvent(`Tự động sinh kiện hàng: ${logicEngine.autoSpawn ? 'BẬT' : 'TẮT'}`, "INFO");
+            });
+
+            // Chế độ linh hoạt
+            const btnFlex = document.getElementById("btn-flexible");
+            btnFlex.addEventListener("click", () => {
+                logicEngine.flexibleMode = !logicEngine.flexibleMode;
+                btnFlex.classList.toggle("active", logicEngine.flexibleMode);
+                btnFlex.innerHTML = `<i class="fa-solid fa-shuffle"></i> Linh Hoạt: ${logicEngine.flexibleMode ? 'BẬT' : 'TẮT'}`;
+                logicEngine.logEvent(`Chế độ phân bổ linh hoạt AMR: ${logicEngine.flexibleMode ? 'BẬT' : 'TẮT'}`, "INFO");
+            });
+
+            // Xóa toàn bộ vật cản
+            document.getElementById("btn-clear-obs").addEventListener("click", () => {
+                logicEngine.clearAllObstacles();
+            });
+
+            // Test kẹt cổng
+            document.getElementById("btn-test-jam").addEventListener("click", () => {
+                logicEngine.triggerJamTest();
+            });
+
+            // Test che khuất
+            document.getElementById("btn-test-occlusion").addEventListener("click", () => {
+                logicEngine.triggerOcclusionTest();
+            });
+
+            // Bật/tắt còi báo
+            const btnSiren = document.getElementById("btn-siren");
+            btnSiren.addEventListener("click", () => {
+                logicEngine.sirenMuted = !logicEngine.sirenMuted;
+                btnSiren.classList.toggle("active", !logicEngine.sirenMuted);
+                btnSiren.innerHTML = `<i class="fa-solid fa-volume-${logicEngine.sirenMuted ? 'xmark' : 'high'}"></i> Còi: ${logicEngine.sirenMuted ? 'TẮT' : 'BẬT'}`;
+            });
+
+            // Điều chỉnh tốc độ 1x / 2x / 4x
+            const speedBtns = document.querySelectorAll(".btn-speed");
+            speedBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    speedBtns.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    const spd = parseFloat(btn.dataset.speed);
+                    logicEngine.speedMultiplier = spd;
+                    logicEngine.logEvent(`Tốc độ mô phỏng chuyển sang: ${spd}x`, "INFO");
+                });
+            });
+
+            // Xuất JSON
+            document.getElementById("btn-export-json").addEventListener("click", () => {
+                const jsonStr = logicEngine.exportStateJSON();
+                const blob = new Blob([jsonStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `nexuslog_simulation_state_${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                logicEngine.logEvent("Đã xuất trạng thái hệ thống dạng JSON", "INFO");
+            });
+
+            // Điều khiển góc quay Camera
+            const camIso = document.getElementById("cam-iso");
+            const camTop = document.getElementById("cam-top");
+            const camFollow = document.getElementById("cam-follow");
+            const camPills = [camIso, camTop, camFollow];
+
+            function setCam(btn, mode) {
+                camPills.forEach(p => p.classList.remove("active"));
+                btn.classList.add("active");
+                renderer3D.setCameraPreset(mode);
+            }
+
+            camIso.addEventListener("click", () => setCam(camIso, "iso"));
+            camTop.addEventListener("click", () => setCam(camTop, "top"));
+            camFollow.addEventListener("click", () => setCam(camFollow, "follow"));
+
+            // Theo dõi cảnh báo không có đường để bật banner toast
+            setInterval(() => {
+                const toast = document.getElementById("no-path-toast");
+                const hasNoPath = logicEngine.amrs.some(a => a.noPathAlert);
+                if (toast) toast.style.display = hasNoPath ? "flex" : "none";
+            }, 300);
+        });
+    </script>
+</body>
+</html>
+
