@@ -268,9 +268,10 @@
                                     <button class="btn-toggle-view" id="btn-toggle-3d"><i class="fa-solid fa-cube"></i> 3D AI Twin</button>
                                 </div>
                                 <div class="fps-badge">
-                                    <span class="fps-dot"></span> 60 FPS Live
-                                </div>
-                                <button class="btn-light-action" id="btn-spawn-pkg">
+                                    <span class="fps-dot"></span> <span id="app-live-fps">60 FPS Live</span></div>
+                                
+                                <div id="toolbar-actions-2d" class="toolbar-actions-2d" style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                                    <button class="btn-light-action" id="btn-spawn-pkg">
                                     <i class="fa-solid fa-plus"></i> Tạo Kiện Hàng
                                 </button>
                                 <button class="btn-light-action" id="btn-toggle-auto-spawn" style="background:#eff6ff; color:#1d4ed8; font-weight:700;">
@@ -300,6 +301,7 @@
                                 <button class="btn-light-action" id="btn-toolbar-mute" title="Bật/Tắt Còi Báo Động">
                                     <i class="fa-solid fa-volume-high"></i> Còi Báo
                                 </button>
+                                </div>
                             </div>
                         </div>
 
@@ -325,9 +327,8 @@
                         </div>
 
                         <!-- 3D AI Digital Twin Frame (Three.js Industrial Simulation) -->
-                        <div class="canvas-3d-frame" id="canvas-3d-frame" style="display: none; position: relative; border-radius: 8px; overflow: hidden; height: 580px; border: 1px solid #e2e8f0; background: #ffffff;">
+                        <div class="canvas-3d-frame" id="canvas-3d-frame" style="display: none; position: relative; border-radius: 8px; overflow: hidden; height: 760px; min-height: 650px; border: 1px solid #cbd5e1; background: #ffffff;">
                             <iframe id="iframe-3d-sim" src="/static/simulation_3d.html" style="width: 100%; height: 100%; border: none;"></iframe>
-                        </div>
                         </div>
 
                         <!-- Legend -->
@@ -355,7 +356,7 @@
                                 <span class="kpi-lbl">Cổng IoT hoạt động</span>
                             </div>
                             <div class="kpi-box">
-                                <span class="kpi-num text-green">98.4%</span>
+                                <span class="kpi-num text-green" id="kpi-ai-accuracy">98.4%</span>
                                 <span class="kpi-lbl">Độ chính xác AI</span>
                             </div>
                             <div class="kpi-box">

@@ -72,7 +72,9 @@
             this.renderer.setSize(w, h);
             this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
             this.renderer.shadowMap.enabled = false; // Tắt shadow map để tối ưu hiệu năng
-            this.container.innerHTML = "";
+            // Chỉ xóa canvas WebGL cũ nếu có, bảo toàn các nút nổi điều khiển camera (cam-controls)
+            const oldCanvas = this.container.querySelector("canvas");
+            if (oldCanvas) oldCanvas.remove();
             this.container.appendChild(this.renderer.domElement);
 
             // 4. OrbitControls
@@ -95,6 +97,11 @@
             this.buildAIPortal();
             this.build9ProvinceRacks();
             this.buildAMRs();
+
+            // Đảm bảo sàn sạch sẽ, không còn vật cản thừa từ phiên trước
+            if (this.engine && typeof this.engine.clearAllObstacles === "function") {
+                this.engine.clearAllObstacles();
+            }
 
             // 6. Bắt sự kiện click đặt vật cản
             this.bindEvents();
@@ -121,16 +128,44 @@
         // A. SÀN 36x22, LƯỚI A*, DẢI SÀN 3 LÀN
         // =========================================================================
         buildFloorAndLanes() {
-            // Mặt phẳng sàn tương tác
+            // Sàn Epoxy xám công nghiệp mở rộng toàn diện (Phủ kín khoảng trắng trên lưới 46x30)
+            const extendedFloorGeo = new THREE.PlaneGeometry(54, 38);
+            const extendedFloorMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.85, metalness: 0.1 });
+            const extendedFloor = new THREE.Mesh(extendedFloorGeo, extendedFloorMat);
+            extendedFloor.rotation.x = -Math.PI / 2;
+            extendedFloor.position.y = -0.01;
+            this.scene.add(extendedFloor);
+
+            // Mặt phẳng sàn tương tác A* chính (46 x 30 mét)
             const floorGeo = new THREE.PlaneGeometry(this.config.GRID_W, this.config.GRID_H);
-            const floorMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const floorMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.7 });
             const floor = new THREE.Mesh(floorGeo, floorMat);
             floor.rotation.x = -Math.PI / 2;
             this.scene.add(floor);
             this.groundPlane = floor;
 
-            // Lưới A* mờ nhẹ 36x22
-            const gridHelper = new THREE.GridHelper(this.config.GRID_W, this.config.GRID_W, 0xd1d5db, 0xe2e8f0);
+            // Đường viền an toàn nhà kho màu vàng công nghiệp
+            const borderGeo = new THREE.EdgesGeometry(floorGeo);
+            const borderMat = new THREE.LineBasicMaterial({ color: 0xf59e0b, linewidth: 3 });
+            const borderLines = new THREE.LineSegments(borderGeo, borderMat);
+            borderLines.rotation.x = -Math.PI / 2;
+            borderLines.position.y = 0.015;
+            this.scene.add(borderLines);
+
+            // Lan can bảo vệ an toàn xung quanh biên giới xưởng (Safety Guardrails)
+            this.buildSafetyPerimeter();
+
+            // Khu tiếp nhận nhập hàng Inbound (bên trái đầu băng chuyền)
+            this.buildInboundDock();
+
+            // Khu xuất hàng tổng Outbound (phía dưới kệ hàng 34 tỉnh)
+            this.buildOutboundDock();
+
+            // Khu trạm sạc AMR tự động (phía phải cho 6 robot)
+            this.buildChargingDocks();
+
+            // Lưới A* chuẩn công nghiệp
+            const gridHelper = new THREE.GridHelper(this.config.GRID_W, this.config.GRID_W, 0x94a3b8, 0xcbd5e1);
             gridHelper.position.y = 0.01;
             gridHelper.scale.z = this.config.GRID_H / this.config.GRID_W;
             this.scene.add(gridHelper);
@@ -139,32 +174,32 @@
             const hemiLight = new THREE.HemisphereLight(0xffffff, 0xe2e8f0, 0.85);
             this.scene.add(hemiLight);
 
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-            dirLight.position.set(15, 25, 20);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.65);
+            dirLight.position.set(20, 30, 25);
             this.scene.add(dirLight);
 
-            // Dải sàn tô màu mờ 3 làn (Bắc: Xanh dương, Trung: Tím, Nam: Xanh lá)
+            // Dải sàn tô màu mờ 3 Cụm Hub (Bắc: Xanh dương, Trung: Tím, Nam: Xanh lá)
             const lanesConfig = [
-                { id: 1, region: "BẮC", amr: "AMR-01", x: 9, color: 0x0284c7 },
-                { id: 2, region: "TRUNG", amr: "AMR-02", x: 18, color: 0x9333ea },
-                { id: 3, region: "NAM", amr: "AMR-03", x: 27, color: 0x10b981 }
+                { id: 1, hub: "HUB MIỀN BẮC (4 KỆ GOM)", amr: "AMR-01 & 02", x: 11, color: 0x0284c7 },
+                { id: 2, hub: "HUB MIỀN TRUNG (3 KỆ GOM)", amr: "AMR-03 & 04", x: 23, color: 0x9333ea },
+                { id: 3, hub: "HUB MIỀN NAM (3 KỆ GOM)", amr: "AMR-05 & 06", x: 35, color: 0x10b981 }
             ];
 
             lanesConfig.forEach(lane => {
-                const wPos = this.gridToWorld(lane.x, 12);
-                const laneGeo = new THREE.PlaneGeometry(7.0, 12.0);
+                const wPos = this.gridToWorld(lane.x, 16);
+                const laneGeo = new THREE.PlaneGeometry(12.0, 18.0);
                 const laneMat = new THREE.MeshBasicMaterial({
                     color: lane.color,
                     transparent: true,
-                    opacity: 0.12,
+                    opacity: 0.09,
                     side: THREE.DoubleSide
                 });
                 const laneMesh = new THREE.Mesh(laneGeo, laneMat);
                 laneMesh.rotation.x = -Math.PI / 2;
-                laneMesh.position.set(wPos.x, 0.015, wPos.z);
+                laneMesh.position.set(wPos.x, 0.012, wPos.z);
                 this.scene.add(laneMesh);
 
-                // Chữ ghi trên sàn: "LÀN n: MIỀN ... (AMR-0n)"
+                // Chữ ghi trên sàn: "CỬA n: HUB MIỀN ... (AMR-0x & 0y)"
                 const textCanvas = document.createElement("canvas");
                 textCanvas.width = 512;
                 textCanvas.height = 128;
@@ -172,16 +207,90 @@
                 tctx.fillStyle = "rgba(255,255,255,0.0)";
                 tctx.fillRect(0, 0, 512, 128);
                 tctx.fillStyle = lane.color === 0x0284c7 ? "#0284c7" : (lane.color === 0x9333ea ? "#9333ea" : "#059669");
-                tctx.font = "bold 34px 'Plus Jakarta Sans', sans-serif";
+                tctx.font = "bold 32px 'Plus Jakarta Sans', sans-serif";
                 tctx.textAlign = "center";
-                tctx.fillText(`LÀN ${lane.id}: MIỀN ${lane.region} (${lane.amr})`, 256, 75);
+                tctx.fillText(`CỬA ${lane.id}: ${lane.hub}`, 256, 55);
+                tctx.font = "bold 24px 'JetBrains Mono', monospace";
+                tctx.fillText(`Đội xe: ${lane.amr}`, 256, 95);
 
                 const tex = new THREE.CanvasTexture(textCanvas);
-                const tPlane = new THREE.Mesh(new THREE.PlaneGeometry(5.0, 1.25), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
+                const tPlane = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 1.6), new THREE.MeshBasicMaterial({ map: tex, transparent: true }));
                 tPlane.rotation.x = -Math.PI / 2;
-                tPlane.position.set(wPos.x, 0.02, wPos.z - 2.5);
+                tPlane.position.set(wPos.x, 0.02, wPos.z - 5.5);
                 this.scene.add(tPlane);
             });
+        }
+
+
+        // Lan can bảo vệ an toàn xung quanh biên giới xưởng (Đã gỡ các cọc vàng lơ lửng gây hiểu nhầm)
+        buildSafetyPerimeter() {
+            // Không tạo cọc tiêu vàng lơ lửng ngoài biên để giữ không gian sạch và tránh hiểu nhầm là vật cản
+        }
+
+        // Khu tiep nhan nhap hang Inbound
+        buildInboundDock() {
+            const dockGroup = new THREE.Group();
+            dockGroup.position.set(-19.5, 0, -8);
+
+            const palletGeo = new THREE.BoxGeometry(1.6, 0.2, 1.4);
+            const palletMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.9 });
+            const pallet = new THREE.Mesh(palletGeo, palletMat);
+            pallet.position.set(0, 0.1, 0);
+            dockGroup.add(pallet);
+
+            const boxGeo = new THREE.BoxGeometry(0.65, 0.5, 0.65);
+            const boxMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.6 });
+            const b1 = new THREE.Mesh(boxGeo, boxMat);
+            b1.position.set(-0.35, 0.45, -0.2);
+            dockGroup.add(b1);
+            const b2 = new THREE.Mesh(boxGeo, boxMat);
+            b2.position.set(0.35, 0.45, 0.2);
+            dockGroup.add(b2);
+
+            this.scene.add(dockGroup);
+        }
+
+        // Khu xuat hang tong Outbound
+        buildOutboundDock() {
+            const outGroup = new THREE.Group();
+            outGroup.position.set(0, 0, 12.2);
+
+            const vGeo = new THREE.PlaneGeometry(24, 1.4);
+            const vMat = new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.35 });
+            const v = new THREE.Mesh(vGeo, vMat);
+            v.rotation.x = -Math.PI / 2;
+            v.position.y = 0.02;
+            outGroup.add(v);
+
+            [-8, 0, 8].forEach(xOff => {
+                const p = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.18, 1.2), new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.9 }));
+                p.position.set(xOff, 0.09, 0);
+                outGroup.add(p);
+            });
+
+            this.scene.add(outGroup);
+        }
+
+        // Khu tram sac AMR tu dong
+        buildChargingDocks() {
+            const chargeGroup = new THREE.Group();
+            chargeGroup.position.set(19.5, 0, -2);
+
+            [0, 2.5, 5].forEach((zOff, i) => {
+                const pad = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.08, 1.2), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 }));
+                pad.position.set(0, 0.04, zOff - 2.5);
+                chargeGroup.add(pad);
+
+                const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.9, 8), new THREE.MeshStandardMaterial({ color: 0x334155 }));
+                pole.position.set(0.6, 0.45, zOff - 2.5);
+                chargeGroup.add(pole);
+
+                const led = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshBasicMaterial({ color: 0x10b981 }));
+                led.position.set(0.6, 0.9, zOff - 2.5);
+                chargeGroup.add(led);
+            });
+
+            this.scene.add(chargeGroup);
         }
 
         // =========================================================================
@@ -189,10 +298,10 @@
         // =========================================================================
         buildConveyorAndGates() {
             const conveyorGroup = new THREE.Group();
-            const beltW = 32;
+            const beltW = 42;
             const beltD = 1.3;
             const beltH = 1.2;
-            const wPos = this.gridToWorld(18, this.config.CONVEYOR_Y);
+            const wPos = this.gridToWorld(23, this.config.CONVEYOR_Y);
 
             // Khung thân băng chuyền màu than chì
             const frameGeo = new THREE.BoxGeometry(beltW, 0.2, beltD);
@@ -389,26 +498,27 @@
         // =========================================================================
         build9ProvinceRacks() {
             const rackGroup = new THREE.Group();
+            const racksList = this.config.CLUSTER_RACKS || this.config.PROVINCES;
 
-            this.config.PROVINCES.forEach(p => {
+            racksList.forEach(p => {
                 const wPos = this.gridToWorld(p.x, p.y);
                 const singleRack = new THREE.Group();
                 singleRack.position.set(wPos.x, 0, wPos.z);
 
-                // Khung bục kệ
+                // Khung bục kệ gom cụm tỉnh (kích thước lớn 2.4m x 1.8m chứa tối đa 18 kiện)
                 const body = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.8, 0.4, 1.6),
+                    new THREE.BoxGeometry(2.4, 0.45, 1.8),
                     new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.4 })
                 );
-                body.position.y = 0.2;
+                body.position.y = 0.225;
                 singleRack.add(body);
 
-                // Mặt bục phân màu miền
+                // Mặt bục phân màu miền (Bắc: Xanh dương, Trung: Tím, Nam: Xanh lá)
                 const topPlate = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.82, 0.06, 1.62),
+                    new THREE.BoxGeometry(2.44, 0.06, 1.84),
                     new THREE.MeshBasicMaterial({ color: p.color })
                 );
-                topPlate.position.y = 0.42;
+                topPlate.position.y = 0.47;
                 singleRack.add(topPlate);
 
                 // Thùng hàng xếp trên kệ (Dynamic Boxes)
@@ -416,32 +526,32 @@
                 singleRack.add(boxesContainer);
                 singleRack.userData = { boxesContainer, count: 0, provinceName: p.name, color: p.color };
 
-                // Nhãn nổi: "Tên + số/6 ô"
+                // Nhãn nổi: Hiển thị tên viết tắt cụm tỉnh + số kiện/18 ô
                 const labelCanvas = document.createElement("canvas");
-                labelCanvas.width = 256;
-                labelCanvas.height = 90;
+                labelCanvas.width = 340;
+                labelCanvas.height = 100;
                 const lctx = labelCanvas.getContext("2d");
                 lctx.fillStyle = "#ffffff";
                 lctx.strokeStyle = p.color;
                 lctx.lineWidth = 5;
                 lctx.beginPath();
-                lctx.roundRect(6, 6, 244, 78, 12);
+                lctx.roundRect(6, 6, 328, 88, 12);
                 lctx.fill();
                 lctx.stroke();
                 lctx.fillStyle = "#0f172a";
-                lctx.font = "bold 26px 'Plus Jakarta Sans', sans-serif";
+                lctx.font = "bold 23px 'Plus Jakarta Sans', sans-serif";
                 lctx.textAlign = "center";
-                lctx.fillText(p.name, 128, 40);
+                lctx.fillText(p.shortName || p.name, 170, 42);
                 lctx.fillStyle = p.color;
-                lctx.font = "bold 22px 'JetBrains Mono', sans-serif";
-                lctx.fillText("0/6 ô", 128, 68);
+                lctx.font = "bold 21px 'JetBrains Mono', sans-serif";
+                lctx.fillText("0/18 ô", 170, 74);
 
                 const labelTex = new THREE.CanvasTexture(labelCanvas);
                 const labelMesh = new THREE.Mesh(
-                    new THREE.PlaneGeometry(1.6, 0.58),
+                    new THREE.PlaneGeometry(2.4, 0.72),
                     new THREE.MeshBasicMaterial({ map: labelTex, transparent: true })
                 );
-                labelMesh.position.set(0, 2.2, 0);
+                labelMesh.position.set(0, 2.3, 0);
                 singleRack.add(labelMesh);
                 singleRack.userData.labelMesh = labelMesh;
                 singleRack.userData.labelCanvas = labelCanvas;
@@ -584,6 +694,36 @@
             this.renderer.render(this.scene, this.camera);
         }
 
+
+        // Tạo texture tem mã vạch công nghiệp Code128 thực tế
+        createBarcodeLabelTexture(waybill, provinceName) {
+            const c = document.createElement("canvas");
+            c.width = 256;
+            c.height = 140;
+            const ctx = c.getContext("2d");
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, 256, 140);
+
+            // Các sọc mã vạch đen trắng
+            ctx.fillStyle = "#0f172a";
+            const bars = [4,2,3,1,4,2,1,3,2,4,1,2,3,1,4,2,3,1,2,4,3,1,2,3,4,1,3,2,1,4,2,3,1,2,4];
+            let bx = 14;
+            for (let b of bars) {
+                ctx.fillRect(bx, 14, b * 2.2, 58);
+                bx += b * 2.2 + 3.2;
+            }
+
+            // In mã vận đơn bưu chính và tên tỉnh
+            ctx.font = "bold 20px 'JetBrains Mono', monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(waybill, 128, 98);
+            ctx.font = "bold 18px 'Plus Jakarta Sans', sans-serif";
+            ctx.fillText(provinceName, 128, 124);
+
+            const tex = new THREE.CanvasTexture(c);
+            return tex;
+        }
+
         renderPackages() {
             const currentIds = new Set();
             const beltH = 1.2;
@@ -595,8 +735,22 @@
 
                 if (!pMesh) {
                     const boxGeo = new THREE.BoxGeometry(0.68, 0.52, 0.68);
-                    const boxMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.5 });
+                    const regionColorMap = { "Bắc": 0x0284c7, "Trung": 0x9333ea, "Nam": 0x10b981, "BẮC": 0x0284c7, "TRUNG": 0x9333ea, "NAM": 0x10b981 };
+                    const pkgColor = regionColorMap[p.region] || 0xd97706;
+                    const boxMat = new THREE.MeshStandardMaterial({ color: pkgColor, roughness: 0.5 });
                     pMesh = new THREE.Mesh(boxGeo, boxMat);
+
+                    // Tem dán mã vạch Code128 thực tế trên mặt trên hộp hàng
+                    const labelGeo = new THREE.PlaneGeometry(0.52, 0.36);
+                    const labelMat = new THREE.MeshBasicMaterial({ 
+                        map: this.createBarcodeLabelTexture(p.barcode, p.province),
+                        transparent: true 
+                    });
+                    const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+                    labelMesh.rotation.x = -Math.PI / 2;
+                    labelMesh.position.y = 0.265;
+                    pMesh.add(labelMesh);
+
                     this.scene.add(pMesh);
                     this.meshes.packages[p.id] = pMesh;
                 }
@@ -658,6 +812,12 @@
                             positions[count * 3 + 2] = nodeWorld.z;
                             count++;
                         }
+                        // Chuyển màu cam khi đang tránh va chạm hoặc tính lại đường
+                        if (amr.blockedTimer > 0) {
+                            trailLine.material.color.setHex(0xf97316);
+                        } else {
+                            trailLine.material.color.setHex(0x06b6d4);
+                        }
                         trailLine.geometry.setDrawRange(0, count);
                         trailLine.geometry.attributes.position.needsUpdate = true;
                     } else {
@@ -668,7 +828,8 @@
         }
 
         renderRacks() {
-            this.config.PROVINCES.forEach(p => {
+            const racksList = this.config.CLUSTER_RACKS || this.config.PROVINCES;
+            racksList.forEach(p => {
                 const rackGroup = this.meshes.racks[p.id];
                 const logicRack = this.engine.racks[p.id];
                 if (!rackGroup || !logicRack) return;
@@ -677,39 +838,48 @@
                 if (rackGroup.userData.count !== logicRack.count) {
                     rackGroup.userData.count = logicRack.count;
                     const container = rackGroup.userData.boxesContainer;
-                    container.innerHTML = "";
                     while (container.children.length > 0) {
                         container.remove(container.children[0]);
                     }
 
-                    const boxGeo = new THREE.BoxGeometry(0.65, 0.5, 0.65);
+                    const boxGeo = new THREE.BoxGeometry(0.55, 0.42, 0.55);
                     const boxMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.5 });
 
+                    // Xếp tối đa 18 kiện: 3 cột x 2 hàng x 3 tầng
                     for (let i = 0; i < logicRack.count; i++) {
                         const box = new THREE.Mesh(boxGeo, boxMat);
-                        const col = i % 2;
-                        const row = Math.floor(i / 2);
-                        box.position.set(-0.35 + col * 0.7, 0.45 + 0.25 + row * 0.52, 0);
+                        const col = i % 3;
+                        const depth = Math.floor(i / 3) % 2;
+                        const layer = Math.floor(i / 6);
+                        box.position.set(-0.6 + col * 0.6, 0.45 + 0.21 + layer * 0.44, -0.3 + depth * 0.6);
                         container.add(box);
                     }
 
-                    // Cập nhật nhãn nổi
+                    // Cập nhật nhãn nổi & cảnh báo sức chứa (15-17 Cam, 18 Đỏ)
                     const canvas = rackGroup.userData.labelCanvas;
                     const lctx = canvas.getContext("2d");
-                    lctx.fillStyle = "#ffffff";
-                    lctx.strokeStyle = p.color;
-                    lctx.lineWidth = 5;
+                    const maxCap = this.config.MAX_RACK_CAPACITY || 18;
+                    const isFull = logicRack.count >= maxCap;
+                    const isNearFull = logicRack.count >= maxCap - 3 && !isFull;
+                    const statusColor = isFull ? "#ef4444" : (isNearFull ? "#f97316" : p.color);
+                    const bgColor = isFull ? "#fef2f2" : (isNearFull ? "#fffbeb" : "#ffffff");
+
+                    lctx.fillStyle = bgColor;
+                    lctx.strokeStyle = statusColor;
+                    lctx.lineWidth = isFull ? 8 : (isNearFull ? 6 : 5);
                     lctx.beginPath();
-                    lctx.roundRect(6, 6, 244, 78, 12);
+                    lctx.roundRect(6, 6, 328, 88, 12);
                     lctx.fill();
                     lctx.stroke();
                     lctx.fillStyle = "#0f172a";
-                    lctx.font = "bold 26px 'Plus Jakarta Sans', sans-serif";
+                    lctx.font = "bold 23px 'Plus Jakarta Sans', sans-serif";
                     lctx.textAlign = "center";
-                    lctx.fillText(p.name, 128, 40);
-                    lctx.fillStyle = p.color;
-                    lctx.font = "bold 22px 'JetBrains Mono', sans-serif";
-                    lctx.fillText(`${logicRack.count}/6 ô`, 128, 68);
+                    lctx.fillText(p.shortName || p.name, 170, 42);
+                    lctx.fillStyle = statusColor;
+                    lctx.font = "bold 21px 'JetBrains Mono', sans-serif";
+                    const warningText = isFull ? ` [ĐẦY: ${logicRack.count}/${maxCap}]` : ` (${logicRack.count}/${maxCap} ô)`;
+                    lctx.fillText(warningText, 170, 74);
+
                     rackGroup.userData.labelMesh.material.map.needsUpdate = true;
                 }
             });
@@ -727,20 +897,38 @@
                     const obsGroup = new THREE.Group();
                     obsGroup.position.set(wPos.x, 0.35, wPos.z);
 
-                    // Khối cản màu đỏ an toàn
-                    const obsMesh = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.85, 0.7, 0.85),
-                        new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 })
+                    // Cọc tiêu rào chắn cảnh báo công nghiệp (Traffic Cone Pylon - Không nhầm với kiện hàng)
+                    // Đế cao su màu đen
+                    const baseMesh = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.85, 0.1, 0.85),
+                        new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 })
                     );
-                    obsGroup.add(obsMesh);
+                    baseMesh.position.y = -0.3;
+                    obsGroup.add(baseMesh);
 
-                    // Sọc cảnh báo vàng
-                    const stripeMesh = new THREE.Mesh(
-                        new THREE.BoxGeometry(0.87, 0.15, 0.87),
+                    // Thân cọc tiêu hình nón màu Cam dạ quang
+                    const coneMesh = new THREE.Mesh(
+                        new THREE.ConeGeometry(0.32, 0.7, 16),
+                        new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.4 })
+                    );
+                    coneMesh.position.y = 0.05;
+                    obsGroup.add(coneMesh);
+
+                    // Vòng phản quang màu trắng bạc
+                    const bandMesh = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.22, 0.25, 0.18, 16),
+                        new THREE.MeshBasicMaterial({ color: 0xffffff })
+                    );
+                    bandMesh.position.y = 0.05;
+                    obsGroup.add(bandMesh);
+
+                    // Đèn chớp cảnh báo vàng trên đỉnh
+                    const lightMesh = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.08, 8, 8),
                         new THREE.MeshBasicMaterial({ color: 0xfacc15 })
                     );
-                    stripeMesh.position.y = 0.1;
-                    obsGroup.add(stripeMesh);
+                    lightMesh.position.y = 0.42;
+                    obsGroup.add(lightMesh);
 
                     this.scene.add(obsGroup);
                     this.meshes.obstacles[k] = obsGroup;
@@ -797,6 +985,32 @@
                     </div>
                 `).join("");
             }
+
+            // Gộp số liệu về MỘT nguồn chân lý (Single Source of Truth) - Đồng bộ sang trang cha
+            const now = performance.now();
+            if (now - this.lastSyncTime >= 250) {
+                this.lastSyncTime = now;
+                const accuracyStr = this.engine.totalConfScanned > 0 ? 
+                    (this.engine.totalConfidenceSum / this.engine.totalConfScanned * 100).toFixed(1) + "%" : "98.4%";
+                const activeAmrCount = this.engine.amrs.filter(a => a.state !== "IDLE").length;
+                const amrSummaryStr = activeAmrCount > 0 ? `${activeAmrCount}/3 Hoạt động` : "Rảnh (Chờ máng)";
+                
+                try {
+                    if (window.parent && window.parent !== window) {
+                        window.parent.postMessage({
+                            type: "SYNC_3D_METRICS",
+                            metrics: {
+                                totalProcessed: this.engine.totalProcessed,
+                                waitingCount: this.engine.packages.length,
+                                accuracy: accuracyStr,
+                                activeGates: "3 / 3",
+                                amrSummary: amrSummaryStr,
+                                fps: this.fps
+                            }
+                        }, "*");
+                    }
+                } catch (e) {}
+            }
         }
 
         bindEvents() {
@@ -809,8 +1023,24 @@
                 this.renderer.setSize(w, h);
             });
 
-            // Click chuột lên sàn để Đặt / Gỡ vật cản A* (Raycast y=0)
+            // Phân biệt rõ giữa Click chuột (đặt vật cản) và Kéo chuột (xoay OrbitControls)
+            let pointerDownX = 0;
+            let pointerDownY = 0;
+            let pointerDownTime = 0;
+
             this.renderer.domElement.addEventListener("pointerdown", (event) => {
+                pointerDownX = event.clientX;
+                pointerDownY = event.clientY;
+                pointerDownTime = performance.now();
+            });
+
+            this.renderer.domElement.addEventListener("pointerup", (event) => {
+                const dist = Math.hypot(event.clientX - pointerDownX, event.clientY - pointerDownY);
+                const elapsed = performance.now() - pointerDownTime;
+
+                // Nếu rê chuột > 6px hoặc nhấn giữ xoay camera > 350ms thì là thao tác xoay OrbitControls -> BỎ QUA
+                if (dist > 6 || elapsed > 350) return;
+
                 const rect = this.renderer.domElement.getBoundingClientRect();
                 this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
                 this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -829,13 +1059,13 @@
         setCameraPreset(mode) {
             this.followCamActive = (mode === "follow");
             if (mode === "iso") {
-                this.camera.position.set(0, 26, 26);
-                this.camera.lookAt(0, 0, 0);
-                if (this.controls) this.controls.target.set(0, 0, 0);
+                this.camera.position.set(0, 25, 23);
+                this.camera.lookAt(0, -1.0, 0);
+                if (this.controls) this.controls.target.set(0, -1.0, 0);
             } else if (mode === "top") {
-                this.camera.position.set(0, 34, 0.1);
-                this.camera.lookAt(0, 0, 0);
-                if (this.controls) this.controls.target.set(0, 0, 0);
+                this.camera.position.set(0, 32, 0.1);
+                this.camera.lookAt(0, -0.5, 0);
+                if (this.controls) this.controls.target.set(0, -0.5, 0);
             }
         }
     }

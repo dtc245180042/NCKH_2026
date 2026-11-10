@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Xem Hóa Đơn Excel - Microsoft Excel (Product Activation Validated)</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #e6e6e6;
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            color: #000;
+        }
+        /* Excel Window Frame */
+        .excel-window {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #ffffff;
+        }
+        /* Title Bar */
+        .title-bar {
+            background: #107c41;
+            color: white;
+            height: 38px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .title-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .excel-icon {
+            background: #ffffff;
+            color: #107c41;
+            font-weight: 900;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        /* Ribbon Tabs */
+        .ribbon-tabs {
+            background: #107c41;
+            display: flex;
+            padding: 0 12px;
+            gap: 4px;
+        }
+        .tab {
+            color: #d1e7dd;
+            padding: 6px 14px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .tab.active {
+            background: #ffffff;
+            color: #107c41;
+            font-weight: 600;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+        }
+        /* Formula Bar */
+        .formula-bar {
+            display: flex;
+            align-items: center;
+            background: #f3f3f3;
+            border-bottom: 1px solid #d4d4d4;
+            padding: 5px 12px;
+            gap: 8px;
+            font-size: 12px;
+        }
+        .cell-name-box {
+            width: 55px;
+            background: white;
+            border: 1px solid #c8c8c8;
+            padding: 2px 6px;
+            font-weight: bold;
+            text-align: center;
+        }
+        .fx-btn {
+            color: #737373;
+            font-style: italic;
+            font-weight: bold;
+        }
+        .formula-input {
+            flex: 1;
+            background: white;
+            border: 1px solid #c8c8c8;
+            padding: 2px 8px;
+            font-family: Consolas, monospace;
+        }
+        /* Spreadsheet Grid */
+        .sheet-container {
+            flex: 1;
+            overflow: auto;
+            background: #ffffff;
+            position: relative;
+        }
+        table.excel-grid {
+            border-collapse: collapse;
+            font-size: 12px;
+            font-family: Calibri, 'Segoe UI', Arial, sans-serif;
+        }
+        table.excel-grid th {
+            background: #e1dfdd;
+            border: 1px solid #c8c8c8;
+            color: #323130;
+            font-weight: normal;
+            font-size: 11px;
+            height: 22px;
+            text-align: center;
+            user-select: none;
+        }
+        table.excel-grid td {
+            border: 1px solid #d4d4d4;
+            padding: 4px 8px;
+            min-width: 70px;
+            height: 20px;
+            box-sizing: border-box;
+        }
+        .row-num {
+            background: #e1dfdd;
+            border: 1px solid #c8c8c8 !important;
+            text-align: center;
+            color: #323130;
+            width: 38px;
+            min-width: 38px !important;
+            font-size: 11px;
+        }
+        /* Excel Table Content Styling */
+        .tbl-hdr {
+            background-color: #0f172a !important;
+            color: #ffffff !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            border: 1px solid #000000 !important;
+        }
+        .tbl-total {
+            background-color: #f1f5f9 !important;
+            font-weight: bold !important;
+        }
+        .mono-code {
+            font-family: 'Consolas', monospace;
+            font-weight: bold;
+            color: #0369a1;
+        }
+        /* Bottom Status Bar */
+        .status-bar {
+            height: 26px;
+            background: #f3f3f3;
+            border-top: 1px solid #d4d4d4;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            font-size: 11px;
+            color: #555;
+        }
+        .sheet-tab {
+            background: #ffffff;
+            border: 1px solid #d4d4d4;
+            border-bottom: 2px solid #107c41;
+            padding: 2px 14px;
+            color: #107c41;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="excel-window">
+    <!-- Title Bar -->
+    <div class="title-bar">
+        <div class="title-bar-left">
+            <span class="excel-icon">X</span>
+            <span>Hoa_Don_Xuat_Kho_NEXUSLOG_PXK202688291.xls - Excel</span>
+        </div>
+        <div>Tự động lưu: BẬT | Đã đồng bộ Cloud</div>
+    </div>
+
+    <!-- Ribbon Tabs -->
+    <div class="ribbon-tabs">
+        <div class="tab">Tệp</div>
+        <div class="tab active">Trang đầu</div>
+        <div class="tab">Chèn</div>
+        <div class="tab">Bố trí trang</div>
+        <div class="tab">Công thức</div>
+        <div class="tab">Dữ liệu</div>
+        <div class="tab">Xem lại</div>
+    </div>
+
+    <!-- Formula Bar -->
+    <div class="formula-bar">
+        <div class="cell-name-box">F14</div>
+        <div class="fx-btn">fx</div>
+        <div class="formula-input">=SUM(F6:F13)</div>
+    </div>
+
+    <!-- Grid -->
+    <div class="sheet-container">
+        <table class="excel-grid">
+            <thead>
+                <tr>
+                    <th class="row-num"></th>
+                    <th style="width:50px;">A</th>
+                    <th style="width:160px;">B</th>
+                    <th style="width:170px;">C</th>
+                    <th style="width:160px;">D</th>
+                    <th style="width:110px;">E</th>
+                    <th style="width:110px;">F</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Row 1 -->
+                <tr>
+                    <td class="row-num">1</td>
+                    <td colspan="6" style="font-size:14pt; font-weight:bold; color:#0f172a; border:none; padding-top:10px;">TỔNG KHO TRUNG CHUYỂN BƯU CHÍNH THÔNG MINH NEXUSLOG</td>
+                </tr>
+                <!-- Row 2 -->
+                <tr>
+                    <td class="row-num">2</td>
+                    <td colspan="6" style="font-size:10pt; color:#64748b; border:none;">Hệ thống Digital Twin SCADA Realtime — Phân loại tự động YOLOv12 & Robot AMR (SV2026-07-82)</td>
+                </tr>
+                <!-- Row 3 -->
+                <tr>
+                    <td class="row-num">3</td>
+                    <td colspan="6" style="font-size:15pt; font-weight:bold; color:#1e3a8a; text-align:center; padding:12px 0;">HÓA ĐƠN KIÊM BIÊN BẢN BÀN GIAO VẬN CHUYỂN XUẤT KHO</td>
+                </tr>
+                <!-- Row 4 -->
+                <tr>
+                    <td class="row-num">4</td>
+                    <td colspan="3" style="font-weight:bold; color:#334155;">Mã chứng từ: <span style="color:#0284c7;">PXK-2026-88291</span> | Tuyến: Hub Miền Bắc</td>
+                    <td colspan="3" style="font-weight:bold; color:#334155; text-align:right;">Thời gian lập: 04/11/2026 16:45:00 | Xe: 29C-882.91</td>
+                </tr>
+                <!-- Row 5: Table Header -->
+                <tr>
+                    <td class="row-num">5</td>
+                    <td class="tbl-hdr">STT</td>
+                    <td class="tbl-hdr">Mã Vận Đơn (Code128)</td>
+                    <td class="tbl-hdr">Tỉnh Thành Đích</td>
+                    <td class="tbl-hdr">Kệ Gom Lưu Trữ</td>
+                    <td class="tbl-hdr">Cụm Hub</td>
+                    <td class="tbl-hdr">Khối Lượng (kg)</td>
+                </tr>
+                <!-- Row 6 to 13: Data -->
+                <tr>
+                    <td class="row-num">6</td>
+                    <td style="text-align:center;">1</td>
+                    <td class="mono-code">PKG-1002-HN</td>
+                    <td><strong>Hà Nội</strong> (Hoàn Kiếm)</td>
+                    <td>Kệ A1 (Ô 01)</td>
+                    <td style="text-align:center;">Miền Bắc</td>
+                    <td style="text-align:right;">2.5</td>
+                </tr>
+                <tr>
+                    <td class="row-num">7</td>
+                    <td style="text-align:center;">2</td>
+                    <td class="mono-code">PKG-1005-BN</td>
+                    <td><strong>Bắc Ninh</strong> (Từ Sơn)</td>
+                    <td>Kệ A1 (Ô 02)</td>
+                    <td style="text-align:center;">Miền Bắc</td>
+                    <td style="text-align:right;">1.8</td>
+                </tr>
+                <tr>
+                    <td class="row-num">8</td>
+                    <td style="text-align:center;">3</td>
+                    <td class="mono-code">PKG-1008-HP</td>
+                    <td><strong>Hải Phòng</strong> (Hồng Bàng)</td>
+                    <td>Kệ A2 (Ô 01)</td>
+                    <td style="text-align:center;">Miền Bắc</td>
+                    <td style="text-align:right;">3.2</td>
+                </tr>
+                <tr>
+                    <td class="row-num">9</td>
+                    <td style="text-align:center;">4</td>
+                    <td class="mono-code">PKG-1011-QN</td>
+                    <td><strong>Quảng Ninh</strong> (Hạ Long)</td>
+                    <td>Kệ A2 (Ô 02)</td>
+                    <td style="text-align:center;">Miền Bắc</td>
+                    <td style="text-align:right;">2.1</td>
+                </tr>
+                <tr>
+                    <td class="row-num">10</td>
+                    <td style="text-align:center;">5</td>
+                    <td class="mono-code">PKG-1014-PT</td>
+                    <td><strong>Phú Thọ</strong> (Việt Trì)</td>
+                    <td>Kệ A3 (Ô 01)</td>
+                    <td style="text-align:center;">Miền Bắc</td>
+                    <td style="text-align:right;">1.4</td>
+                </tr>
+                <tr>
+                    <td class="row-num">11</td>
+                    <td style="text-align:center;">6</td>
+                    <td class="mono-code">PKG-1017-TN</td>
+                    <td><strong>Thái Nguyên</strong> (Sông Công)</td>
+                    <td>Kệ A3 (Ô 02)</td>
+                    <td style="text-align:center;">Miền Bắc</td>
+                    <td style="text-align:right;">2.8</td>
+                </tr>
+                <tr>
+                    <td class="row-num">12</td>
+                    <td style="text-align:center;">7</td>
+                    <td class="mono-code">PKG-1020-VP</td>
+                    <td><strong>Vĩnh Phúc</strong> (Phúc Yên)</td>
+                    <td>Kệ A1 (Ô 03)</td>
+                    <td style="text-align:center;">Miền Bắc</td>
+                    <td style="text-align:right;">1.9</td>
+                </tr>
+                <tr>
+                    <td class="row-num">13</td>
+                    <td style="text-align:center;">8</td>
+                    <td class="mono-code">PKG-1023-HD</td>
+                    <td><strong>Hải Dương</strong> (Chí Linh)</td>
+                    <td>Kệ A2 (Ô 03)</td>
+                    <td style="text-align:center;">Miền Bắc</td>
+                    <td style="text-align:right;">2.7</td>
+                </tr>
+                <!-- Row 14: Total -->
+                <tr class="tbl-total">
+                    <td class="row-num">14</td>
+                    <td colspan="3" style="text-align:center; border:1px solid #94a3b8; font-weight:bold;">TỔNG CỘNG ĐƠN HÀNG XUẤT:</td>
+                    <td style="text-align:center; border:1px solid #94a3b8; font-weight:bold; color:#0369a1;">8 KIỆN HÀNG</td>
+                    <td style="text-align:center; border:1px solid #94a3b8; font-weight:bold;">TỔNG CÂN:</td>
+                    <td style="text-align:right; border:1px solid #94a3b8; font-weight:bold; color:#b91c1c;">18.4</td>
+                </tr>
+                <!-- Row 15, 16, 17: Signatures -->
+                <tr>
+                    <td class="row-num">15</td>
+                    <td colspan="2" style="font-weight:bold; text-align:center; padding-top:20px; border:none;">NGƯỜI LẬP HÓA ĐƠN</td>
+                    <td colspan="2" style="font-weight:bold; text-align:center; padding-top:20px; border:none;">THỦ KHO XUẤT HÀNG</td>
+                    <td colspan="2" style="font-weight:bold; text-align:center; padding-top:20px; border:none;">TÀI XẾ XE TIẾP NHẬN</td>
+                </tr>
+                <tr>
+                    <td class="row-num">16</td>
+                    <td colspan="2" style="font-size:9pt; color:#64748b; font-style:italic; text-align:center; border:none;">(Ký và ghi rõ họ tên)</td>
+                    <td colspan="2" style="font-size:9pt; color:#64748b; font-style:italic; text-align:center; border:none;">(Ký và ghi rõ họ tên)</td>
+                    <td colspan="2" style="font-size:9pt; color:#64748b; font-style:italic; text-align:center; border:none;">(Ký và ghi rõ họ tên)</td>
+                </tr>
+                <tr>
+                    <td class="row-num">17</td>
+                    <td colspan="2" style="font-weight:bold; text-align:center; padding-top:35px; border:none;">Admin SCADA</td>
+                    <td colspan="2" style="font-weight:bold; text-align:center; padding-top:35px; border:none;">Trần Văn Hoàng</td>
+                    <td colspan="2" style="font-weight:bold; text-align:center; padding-top:35px; border:none;">Nguyễn Văn Bình</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div>
+            <span class="sheet-tab">Hoa_Don_Xuat_Kho</span>
+        </div>
+        <div>Số lượng: 8 | Trung bình: 2.3 kg | Tổng: 18.4 kg</div>
+    </div>
+</div>
+
+</body>
+</html>

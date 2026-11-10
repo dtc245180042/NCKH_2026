@@ -288,6 +288,7 @@
             <button class="btn-action" id="btn-clear-obs"><i class="fa-solid fa-eraser"></i> Xóa Vật Cản</button>
             <button class="btn-action" id="btn-test-jam" style="color:#b91c1c;"><i class="fa-solid fa-triangle-exclamation"></i> Test Kẹt Cổng</button>
             <button class="btn-action" id="btn-test-occlusion" style="color:#0284c7;"><i class="fa-solid fa-cloud"></i> Test Che Khuất</button>
+            <button class="btn-action" id="btn-dispatch-truck" style="background:#059669; color:#ffffff; border-color:#059669; font-weight:700;"><i class="fa-solid fa-file-invoice"></i> Xuất Phiếu Xuất Hàng</button>
             <button class="btn-action" id="btn-siren"><i class="fa-solid fa-volume-high"></i> Còi Báo</button>
             
             <!-- Tốc độ 1x / 2x / 4x -->
@@ -317,6 +318,14 @@
                 <button class="cam-pill active" id="cam-iso"><i class="fa-solid fa-cubes"></i> Phối Cảnh</button>
                 <button class="cam-pill" id="cam-top"><i class="fa-solid fa-arrows-to-dot"></i> Nhìn Từ Trên</button>
                 <button class="cam-pill" id="cam-follow"><i class="fa-solid fa-video"></i> Bám Theo AMR</button>
+                <button class="cam-pill" id="cam-reset" title="Về góc nhìn mặc định"><i class="fa-solid fa-rotate-left"></i> Góc Chuẩn</button>
+                <button class="cam-pill" id="cam-fullscreen" title="Phóng to toàn màn hình"><i class="fa-solid fa-expand"></i> Toàn Màn Hình</button>
+            </div>
+
+            <!-- Gợi ý khi Tự Động tắt & Robot rảnh rỗi -->
+            <div id="idle-guide-banner" class="idle-guide-banner" style="display: none; position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); border: 1px solid #0284c7; color: #ffffff; padding: 7px 18px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 25; align-items: center; gap: 8px; pointer-events: none;">
+                <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i>
+                <span>Tự động đang TẮT — Bấm <strong>"Tự Động"</strong> hoặc <strong>"Tạo Kiện Hàng"</strong> để bắt đầu mô phỏng</span>
             </div>
         </div>
 
@@ -348,20 +357,38 @@
                 </div>
             </div>
 
-            <!-- 2. Trạng thái 3 AMR -->
-            <div class="sidebar-section">
-                <div class="section-title">Đội Robot AMR Tự Hành</div>
+            <!-- 2. Đội 6 Robot AMR Tự Hành (Mỗi Hub 2 xe) -->
+            <div class="sidebar-section" style="max-height: 240px; overflow-y: auto;">
+                <div class="section-title">
+                    <span>Đội 6 Xe AMR Tự Hành</span>
+                    <span style="font-size:0.7rem; color:#0284c7; font-weight:700;">3 Hub Vận Hành</span>
+                </div>
+                <!-- Hub Bắc: AMR-01 & 02 -->
                 <div class="amr-status-item">
-                    <div><span class="amr-tag tag-bac">AMR-01</span> <span>Miền Bắc</span></div>
-                    <span id="hud-amr-state-1" style="font-weight:600; color:#0284c7;">Rảnh</span>
+                    <div><span class="amr-tag tag-bac">AMR-01</span> <span>Bắc 1</span></div>
+                    <span id="hud-amr-state-1" style="font-weight:600; color:#0284c7; font-size:0.74rem;">Rảnh</span>
                 </div>
                 <div class="amr-status-item">
-                    <div><span class="amr-tag tag-trung">AMR-02</span> <span>Miền Trung</span></div>
-                    <span id="hud-amr-state-2" style="font-weight:600; color:#9333ea;">Rảnh</span>
+                    <div><span class="amr-tag tag-bac">AMR-02</span> <span>Bắc 2</span></div>
+                    <span id="hud-amr-state-2" style="font-weight:600; color:#0284c7; font-size:0.74rem;">Rảnh</span>
+                </div>
+                <!-- Hub Trung: AMR-03 & 04 -->
+                <div class="amr-status-item">
+                    <div><span class="amr-tag tag-trung">AMR-03</span> <span>Trung 1</span></div>
+                    <span id="hud-amr-state-3" style="font-weight:600; color:#9333ea; font-size:0.74rem;">Rảnh</span>
                 </div>
                 <div class="amr-status-item">
-                    <div><span class="amr-tag tag-nam">AMR-03</span> <span>Miền Nam</span></div>
-                    <span id="hud-amr-state-3" style="font-weight:600; color:#10b981;">Rảnh</span>
+                    <div><span class="amr-tag tag-trung">AMR-04</span> <span>Trung 2</span></div>
+                    <span id="hud-amr-state-4" style="font-weight:600; color:#9333ea; font-size:0.74rem;">Rảnh</span>
+                </div>
+                <!-- Hub Nam: AMR-05 & 06 -->
+                <div class="amr-status-item">
+                    <div><span class="amr-tag tag-nam">AMR-05</span> <span>Nam 1</span></div>
+                    <span id="hud-amr-state-5" style="font-weight:600; color:#10b981; font-size:0.74rem;">Rảnh</span>
+                </div>
+                <div class="amr-status-item">
+                    <div><span class="amr-tag tag-nam">AMR-06</span> <span>Nam 2</span></div>
+                    <span id="hud-amr-state-6" style="font-weight:600; color:#10b981; font-size:0.74rem;">Rảnh</span>
                 </div>
             </div>
 
@@ -444,13 +471,105 @@
                 logicEngine.triggerOcclusionTest();
             });
 
+            // ==========================================================================
+            // CÒI BÁO ĐỘNG SỰ CỐ KẸT HÀNG & VẬT CẢN (WEB AUDIO API INDUSTRIAL SYNTHESIZER)
+            // ==========================================================================
+            const SoundAlarm = {
+                ctx: null,
+                osc: null,
+                gain: null,
+                interval: null,
+                isMuted: false,
+                isPlaying: false,
+
+                init() {
+                    if (!this.ctx) {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContext) {
+                            this.ctx = new AudioContext();
+                        }
+                    }
+                },
+
+                start() {
+                    if (this.isMuted || this.isPlaying) return;
+                    try {
+                        this.init();
+                        if (!this.ctx) return;
+                        if (this.ctx.state === 'suspended') {
+                            this.ctx.resume();
+                        }
+
+                        this.osc = this.ctx.createOscillator();
+                        this.gain = this.ctx.createGain();
+
+                        // Sóng âm sawtooth cho âm vang còi hú công nghiệp rõ ràng
+                        this.osc.type = 'sawtooth';
+                        this.osc.frequency.setValueAtTime(850, this.ctx.currentTime);
+
+                        // Âm lượng vừa phải, không gây chói tai (gain 0.08)
+                        this.gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                        this.osc.connect(this.gain);
+                        this.gain.connect(this.ctx.destination);
+                        this.osc.start();
+                        this.isPlaying = true;
+
+                        // Dao động tần số 2 nốt còi hú (850 Hz <-> 560 Hz) chu kỳ 320ms
+                        let toggle = false;
+                        this.interval = setInterval(() => {
+                            if (!this.osc || !this.ctx) return;
+                            const targetFreq = toggle ? 850 : 560;
+                            this.osc.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.06);
+                            toggle = !toggle;
+                        }, 320);
+                    } catch (e) {
+                        console.warn("Lỗi khởi tạo âm thanh Web Audio:", e);
+                    }
+                },
+
+                stop() {
+                    if (!this.isPlaying) return;
+                    try {
+                        if (this.interval) {
+                            clearInterval(this.interval);
+                            this.interval = null;
+                        }
+                        if (this.osc) {
+                            this.osc.stop();
+                            this.osc.disconnect();
+                            this.osc = null;
+                        }
+                        if (this.gain) {
+                            this.gain.disconnect();
+                            this.gain = null;
+                        }
+                    } catch (e) {
+                        console.warn("Lỗi dừng còi báo:", e);
+                    } finally {
+                        this.isPlaying = false;
+                    }
+                },
+
+                toggleMute() {
+                    this.isMuted = !this.isMuted;
+                    if (this.isMuted && this.isPlaying) {
+                        this.stop();
+                    }
+                    return this.isMuted;
+                }
+            };
+
             // Bật/tắt còi báo
             const btnSiren = document.getElementById("btn-siren");
-            btnSiren.addEventListener("click", () => {
-                logicEngine.sirenMuted = !logicEngine.sirenMuted;
-                btnSiren.classList.toggle("active", !logicEngine.sirenMuted);
-                btnSiren.innerHTML = `<i class="fa-solid fa-volume-${logicEngine.sirenMuted ? 'xmark' : 'high'}"></i> Còi: ${logicEngine.sirenMuted ? 'TẮT' : 'BẬT'}`;
-            });
+            if (btnSiren) {
+                btnSiren.addEventListener("click", () => {
+                    const isMuted = SoundAlarm.toggleMute();
+                    logicEngine.sirenMuted = isMuted;
+                    btnSiren.classList.toggle("active", !isMuted);
+                    btnSiren.innerHTML = `<i class="fa-solid fa-volume-${isMuted ? 'xmark' : 'high'}"></i> Còi: ${isMuted ? 'TẮT' : 'BẬT'}`;
+                    logicEngine.logEvent(`Còi báo động âm thanh: ${isMuted ? 'TẮT' : 'BẬT'}`, "INFO");
+                });
+            }
 
             // Điều chỉnh tốc độ 1x / 2x / 4x
             const speedBtns = document.querySelectorAll(".btn-speed");
@@ -465,42 +584,624 @@
             });
 
             // Xuất JSON
-            document.getElementById("btn-export-json").addEventListener("click", () => {
-                const jsonStr = logicEngine.exportStateJSON();
-                const blob = new Blob([jsonStr], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `nexuslog_simulation_state_${Date.now()}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                logicEngine.logEvent("Đã xuất trạng thái hệ thống dạng JSON", "INFO");
-            });
+            const btnExportJson = document.getElementById("btn-export-json");
+            if (btnExportJson) {
+                btnExportJson.addEventListener("click", () => {
+                    const jsonStr = logicEngine.exportStateJSON();
+                    const blob = new Blob([jsonStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `nexuslog_simulation_state_${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    logicEngine.logEvent("Đã xuất trạng thái hệ thống dạng JSON", "INFO");
+                });
+            }
 
-            // Điều khiển góc quay Camera
+            // Điều khiển góc quay Camera (Bảo vệ an toàn chống lỗi null)
             const camIso = document.getElementById("cam-iso");
             const camTop = document.getElementById("cam-top");
             const camFollow = document.getElementById("cam-follow");
-            const camPills = [camIso, camTop, camFollow];
+            const camPills = [camIso, camTop, camFollow].filter(Boolean);
 
             function setCam(btn, mode) {
-                camPills.forEach(p => p.classList.remove("active"));
-                btn.classList.add("active");
+                camPills.forEach(p => p && p.classList.remove("active"));
+                if (btn) btn.classList.add("active");
                 renderer3D.setCameraPreset(mode);
             }
 
-            camIso.addEventListener("click", () => setCam(camIso, "iso"));
-            camTop.addEventListener("click", () => setCam(camTop, "top"));
-            camFollow.addEventListener("click", () => setCam(camFollow, "follow"));
+            if (camIso) camIso.addEventListener("click", () => setCam(camIso, "iso"));
+            if (camTop) camTop.addEventListener("click", () => setCam(camTop, "top"));
+            if (camFollow) camFollow.addEventListener("click", () => setCam(camFollow, "follow"));
 
-            // Theo dõi cảnh báo không có đường để bật banner toast
+            // Về góc nhìn mặc định chuẩn
+            const camReset = document.getElementById("cam-reset");
+            if (camReset) {
+                camReset.addEventListener("click", () => {
+                    setCam(camIso, "iso");
+                });
+            }
+
+            // Bật / tắt Toàn màn hình
+            const camFs = document.getElementById("cam-fullscreen");
+            if (camFs) {
+                camFs.addEventListener("click", () => {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                        camFs.innerHTML = '<i class="fa-solid fa-compress"></i> Thu Nhỏ';
+                    } else {
+                        document.exitFullscreen().catch(() => {});
+                        camFs.innerHTML = '<i class="fa-solid fa-expand"></i> Toàn Màn Hình';
+                    }
+                });
+            }
+
+            // Theo dõi cảnh báo kẹt cổng và vật cản chặn đường để hú còi báo động thực tế
             setInterval(() => {
                 const toast = document.getElementById("no-path-toast");
                 const hasNoPath = logicEngine.amrs.some(a => a.noPathAlert);
+                const hasJam = logicEngine.gates.some(g => g.isJammed);
+
                 if (toast) toast.style.display = hasNoPath ? "flex" : "none";
-            }, 300);
+
+                // Hú còi báo động công nghiệp nếu có sự cố kẹt cổng HOẶC robot bị vật cản chặn đường
+                if ((hasJam || hasNoPath) && !logicEngine.sirenMuted) {
+                    SoundAlarm.start();
+                } else {
+                    SoundAlarm.stop();
+                }
+
+                // Theo dõi gợi ý khi tự động tắt & robot rảnh
+                const guide = document.getElementById("idle-guide-banner");
+                if (guide) {
+                    const isIdle = !logicEngine.autoSpawn && logicEngine.amrs.every(a => a.state === "IDLE") && logicEngine.packages.length === 0;
+                    guide.style.display = isIdle ? "flex" : "none";
+                }
+            }, 250);
+
+            // =========================================================================
+            // XỬ LÝ MODAL PHIẾU XUẤT HÀNG & BÀN GIAO VẬN CHUYỂN (OUTBOUND MANIFEST)
+            // =========================================================================
+            const dispatchModal = document.getElementById("dispatch-manifest-modal");
+            const btnOpenDispatch = document.getElementById("btn-dispatch-truck");
+            const btnCloseDispatch = document.getElementById("modal-close-manifest");
+            const btnCloseFooter = document.getElementById("btn-manifest-close-footer");
+            const hubRadios = document.querySelectorAll('input[name="manifest-hub"]');
+            const selectRack = document.getElementById("manifest-select-rack");
+            const selectProvince = document.getElementById("manifest-select-province");
+            const tbodyManifest = document.getElementById("manifest-table-body");
+            const badgeManifestId = document.getElementById("manifest-id-badge");
+            const lblPkgCount = document.getElementById("manifest-pkg-count");
+            const lblTotalWeight = document.getElementById("manifest-total-weight");
+            const lblTruckPlate = document.getElementById("manifest-truck-plate");
+            const lblScopeNotice = document.getElementById("manifest-scope-notice");
+            const btnPrintManifest = document.getElementById("btn-manifest-print");
+            const btnExcelManifest = document.getElementById("btn-manifest-excel");
+            const btnConfirmDispatch = document.getElementById("btn-manifest-confirm-dispatch");
+
+            function getSelectedHub() {
+                const checked = document.querySelector('input[name="manifest-hub"]:checked');
+                return checked ? checked.value : "Bắc";
+            }
+
+            // Đồng bộ danh sách Kệ và Tỉnh khi đổi Hub
+            function populateFiltersForHub() {
+                const hub = getSelectedHub();
+                const racks = (logicEngine.config.CLUSTER_RACKS || []).filter(r => r.region === hub);
+                const provinces = (logicEngine.config.PROVINCES || []).filter(p => p.region === hub);
+
+                if (selectRack) {
+                    selectRack.innerHTML = `<option value="ALL">-- Tất cả 10 kệ của Hub ${hub} --</option>` + 
+                        racks.map(r => `<option value="${r.id}">Kệ: ${r.shortName || r.name}</option>`).join("");
+                }
+
+                if (selectProvince) {
+                    selectProvince.innerHTML = `<option value="ALL">-- Tất cả tỉnh của Hub ${hub} --</option>` + 
+                        provinces.map(p => {
+                            // Đếm số kiện hiện có của tỉnh này trên kệ tương ứng
+                            const r = logicEngine.racks[p.rackId];
+                            let cnt = 0;
+                            if (r && r.items) {
+                                cnt = r.items.filter(item => (typeof item === 'object' ? item.province : '') === p.name).length;
+                            }
+                            return `<option value="${p.name}">${p.name} (${cnt} kiện)</option>`;
+                        }).join("");
+                }
+            }
+
+            function renderManifestTable() {
+                const hub = getSelectedHub();
+                const selRackId = selectRack ? selectRack.value : "ALL";
+                const selProv = selectProvince ? selectProvince.value : "ALL";
+
+                let targetRacks = (logicEngine.config.CLUSTER_RACKS || []).filter(r => r.region === hub);
+                if (selRackId !== "ALL") {
+                    targetRacks = targetRacks.filter(r => r.id === selRackId);
+                }
+
+                const plates = {
+                    "Bắc": "29C-882.91 (Xe 8 Tấn Tuyến Hà Nội - Phía Bắc)",
+                    "Trung": "43C-612.45 (Xe 10 Tấn Tuyến Đà Nẵng - Miền Trung)",
+                    "Nam": "51C-993.18 (Xe 15 Tấn Tuyến TP.HCM - Miền Tây)"
+                };
+                if (lblTruckPlate) lblTruckPlate.textContent = plates[hub] || "29C-882.91";
+                if (badgeManifestId) badgeManifestId.textContent = `PXK-${Date.now().toString().slice(-6)}-${hub === 'Bắc' ? 'BAC' : (hub === 'Trung' ? 'TRUNG' : 'NAM')}`;
+
+                let allItems = [];
+                let totalWeightNum = 0.0;
+
+                targetRacks.forEach(cr => {
+                    const r = logicEngine.racks[cr.id];
+                    if (r && r.count > 0 && r.items) {
+                        r.items.forEach(pkg => {
+                            const pkgId = typeof pkg === 'object' ? pkg.id : pkg;
+                            const barcode = typeof pkg === 'object' ? pkg.barcode : `VN-${cr.shortName || 'LOG'}-${String(pkgId).padStart(6, '0')}`;
+                            const provinceName = typeof pkg === 'object' ? pkg.province : cr.name;
+                            
+                            // Nếu có lọc tỉnh cụ thể
+                            if (selProv !== "ALL" && provinceName !== selProv) return;
+
+                            const w = (1.5 + (pkgId % 7) * 0.4).toFixed(1);
+                            totalWeightNum += parseFloat(w);
+
+                            allItems.push({
+                                id: pkgId,
+                                barcode: barcode,
+                                province: provinceName,
+                                rackName: cr.shortName || cr.name,
+                                region: cr.region,
+                                weight: w + " kg"
+                            });
+                        });
+                    }
+                });
+
+                if (lblPkgCount) lblPkgCount.textContent = `${allItems.length} kiện hàng sẵn sàng`;
+                if (lblTotalWeight) lblTotalWeight.textContent = `${totalWeightNum.toFixed(1)} kg`;
+
+                if (lblScopeNotice) {
+                    if (selProv !== "ALL") {
+                        lblScopeNotice.innerHTML = `Đang lọc riêng đơn hàng cho <strong>Tỉnh ${selProv}</strong>`;
+                    } else if (selRackId !== "ALL") {
+                        const rObj = targetRacks[0];
+                        lblScopeNotice.innerHTML = `Đang lọc theo <strong>Kệ ${rObj ? rObj.name : selRackId}</strong>`;
+                    } else {
+                        lblScopeNotice.innerHTML = `Đang xem toàn bộ các kệ thuộc <strong>Hub Miền ${hub}</strong>`;
+                    }
+                }
+
+                if (btnConfirmDispatch) {
+                    const scopeStr = selProv !== "ALL" ? `Tỉnh ${selProv}` : (selRackId !== "ALL" ? `Kệ này` : `Hub ${hub}`);
+                    btnConfirmDispatch.innerHTML = `<i class="fa-solid fa-truck-ramp-box"></i> Xác Nhận Xuất ${scopeStr} (${allItems.length} kiện)`;
+                    btnConfirmDispatch.disabled = (allItems.length === 0);
+                    btnConfirmDispatch.style.opacity = allItems.length === 0 ? "0.6" : "1";
+                }
+
+                if (!tbodyManifest) return;
+                if (allItems.length === 0) {
+                    tbodyManifest.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:22px; color:#64748b; font-style:italic;">Hiện chưa có kiện hàng nào phù hợp với bộ lọc đã chọn. Hãy spawn thêm kiện và chờ robot AMR xếp vào kệ!</td></tr>`;
+                } else {
+                    tbodyManifest.innerHTML = allItems.map((item, idx) => `
+                        <tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:7px 10px; font-weight:600; color:#64748b;">${idx + 1}</td>
+                            <td style="padding:7px 10px; font-family:'JetBrains Mono', monospace; font-weight:700; color:#0284c7;">${item.barcode}</td>
+                            <td style="padding:7px 10px; font-weight:700; color:#0f172a;">${item.province}</td>
+                            <td style="padding:7px 10px; color:#475569; font-size:0.75rem;">${item.rackName}</td>
+                            <td style="padding:7px 10px;"><span style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">Hub ${item.region}</span></td>
+                            <td style="padding:7px 10px; font-family:'JetBrains Mono', monospace; font-weight:600;">${item.weight}</td>
+                        </tr>
+                    `).join("");
+                }
+            }
+
+            if (btnOpenDispatch) {
+                btnOpenDispatch.addEventListener("click", () => {
+                    populateFiltersForHub();
+                    renderManifestTable();
+                    if (dispatchModal) dispatchModal.style.display = "flex";
+                });
+            }
+
+            const closeManifestModal = () => { if (dispatchModal) dispatchModal.style.display = "none"; };
+            if (btnCloseDispatch) btnCloseDispatch.addEventListener("click", closeManifestModal);
+            if (btnCloseFooter) btnCloseFooter.addEventListener("click", closeManifestModal);
+
+            hubRadios.forEach(r => r.addEventListener("change", () => {
+                populateFiltersForHub();
+                renderManifestTable();
+            }));
+
+            if (selectRack) {
+                selectRack.addEventListener("change", () => {
+                    // Nếu đã chọn kệ, bỏ lọc riêng tỉnh để tránh xung đột
+                    if (selectProvince) selectProvince.value = "ALL";
+                    renderManifestTable();
+                });
+            }
+
+            if (selectProvince) {
+                selectProvince.addEventListener("change", () => {
+                    const selProv = selectProvince.value;
+                    if (selProv !== "ALL" && selectRack) {
+                        // Tự động map sang Kệ chứa tỉnh này
+                        const pObj = (logicEngine.config.PROVINCES || []).find(p => p.name === selProv);
+                        if (pObj && pObj.rackId) selectRack.value = pObj.rackId;
+                    }
+                    renderManifestTable();
+                });
+            }
+
+            // NẠP ĐƠN MẪU ĐỂ TEST XUẤT HÓA ĐƠN & IN ẤN NGAY LẬP TỨC
+            const btnSampleData = document.getElementById("btn-manifest-sample-data");
+            if (btnSampleData) {
+                btnSampleData.addEventListener("click", () => {
+                    const hub = getSelectedHub();
+                    const provsInHub = (logicEngine.config.PROVINCES || []).filter(p => p.region === hub);
+
+                    let added = 0;
+                    provsInHub.forEach((p, idx) => {
+                        if (idx < 8) {
+                            const targetRack = logicEngine.racks[p.rackId];
+                            if (targetRack && targetRack.count < (logicEngine.config.MAX_RACK_CAPACITY || 18)) {
+                                const pkgId = 3000 + logicEngine.totalProcessed + idx + 1;
+                                targetRack.items.push({
+                                    id: pkgId,
+                                    barcode: `VN-${p.code || 'LOG'}-${String(pkgId).padStart(6, '0')}`,
+                                    province: p.name,
+                                    region: p.region
+                                });
+                                targetRack.count++;
+                                added++;
+                            }
+                        }
+                    });
+
+                    populateFiltersForHub();
+                    renderManifestTable();
+                    alert(`⚡ ĐÃ NẠP THÀNH CÔNG ${added} KIỆN HÀNG MẪU LÊN CÁC KỆ CỦA HUB ${hub}!
+
+Bây giờ bạn có thể thử:
+1. Bấm 'In Phiếu (Print PDF)' để xem bản in hóa đơn A4.
+2. Bấm 'Xuất Hóa Đơn Excel (.xls)' để tải hóa đơn bảng biểu chuyên nghiệp.`);
+                });
+            }
+
+            // IN PHIẾU XUẤT HÀNG (CỬA SỔ IN A4 CHUYÊN DỤNG, TRÁNH LỖI IFRAME)
+            if (btnPrintManifest) {
+                btnPrintManifest.addEventListener("click", () => {
+                    const printArea = document.getElementById("manifest-print-area");
+                    if (!printArea) return;
+
+                    // Tạo bản sao HTML để in, loại bỏ thanh cuộn
+                    const clone = printArea.cloneNode(true);
+                    const scrollContainer = clone.querySelector('div[style*="overflow-y:auto"]');
+                    if (scrollContainer) {
+                        scrollContainer.style.maxHeight = "none";
+                        scrollContainer.style.overflow = "visible";
+                    }
+
+                    const printWindow = window.open("", "_blank", "width=860,height=920");
+                    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <title>Phiếu Xuất Hàng & Bàn Giao Vận Chuyển - NEXUSLOG</title>
+    <meta charset="utf-8">
+    <style>
+        @page { size: A4 portrait; margin: 15mm; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #0f172a; margin: 0; padding: 15px; font-size: 13px; line-height: 1.5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; }
+        th { background-color: #0f172a !important; color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; text-align: left; padding: 7px 10px; font-size: 12px; }
+        td { padding: 7px 10px; border-bottom: 1px solid #cbd5e1; font-size: 12px; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .text-mono { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #0284c7; }
+        @media print {
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    ${clone.innerHTML}
+    <script>
+        window.onload = function() {
+            window.focus();
+            setTimeout(function() {
+                window.print();
+                window.close();
+            }, 350);
+        };
+    <\/script>
+</body>
+</html>`);
+                    printWindow.document.close();
+                });
+            }
+
+            // XUẤT HÓA ĐƠN EXCEL BẢNG BIỂU CHUYÊN NGHIỆP (.XLS)
+            if (btnExcelManifest) {
+                btnExcelManifest.addEventListener("click", () => {
+                    const hub = getSelectedHub();
+                    const selProv = selectProvince ? selectProvince.value : "ALL";
+                    const selRackId = selectRack ? selectRack.value : "ALL";
+                    const manifestId = badgeManifestId ? badgeManifestId.textContent : `PXK-${Date.now().toString().slice(-6)}`;
+                    const truckPlate = lblTruckPlate ? lblTruckPlate.textContent : "29C-882.91";
+                    const nowStr = new Date().toLocaleString("vi-VN");
+
+                    const trs = tbodyManifest.querySelectorAll("tr");
+                    let rowsHtml = "";
+                    let totalCount = 0;
+                    let totalWeight = 0.0;
+
+                    trs.forEach(tr => {
+                        const tds = tr.querySelectorAll("td");
+                        if (tds.length === 6) {
+                            totalCount++;
+                            const wVal = parseFloat(tds[5].textContent) || 0;
+                            totalWeight += wVal;
+                            rowsHtml += `<tr>
+                                <td style="text-align:center; border:1px solid #94a3b8; padding:6px;">${tds[0].textContent}</td>
+                                <td style="font-family:'Courier New', monospace; font-weight:bold; color:#0369a1; border:1px solid #94a3b8; padding:6px;">${tds[1].textContent}</td>
+                                <td style="font-weight:bold; border:1px solid #94a3b8; padding:6px;">${tds[2].textContent}</td>
+                                <td style="border:1px solid #94a3b8; padding:6px;">${tds[3].textContent}</td>
+                                <td style="text-align:center; border:1px solid #94a3b8; padding:6px;">${tds[4].textContent}</td>
+                                <td style="text-align:right; border:1px solid #94a3b8; padding:6px;">${tds[5].textContent}</td>
+                            </tr>`;
+                        }
+                    });
+
+                    if (totalCount === 0) {
+                        alert("⚠️ Kệ hiện chưa có kiện hàng nào để xuất Excel. Hãy bấm nút '⚡ Nạp Đơn Mẫu' để tạo dữ liệu kiểm tra ngay!");
+                        return;
+                    }
+
+                    const scopeStr = selProv !== "ALL" ? `Tỉnh ${selProv}` : (selRackId !== "ALL" ? `Kệ ${selRackId}` : `Toàn Tuyến Hub ${hub}`);
+
+                    const excelHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!--[if gte mso 9]>
+    <xml>
+    <x:ExcelWorkbook>
+        <x:ExcelWorksheets>
+            <x:ExcelWorksheet>
+                <x:Name>Hoa_Don_Xuat_Kho</x:Name>
+                <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+            </x:ExcelWorksheet>
+        </x:ExcelWorksheets>
+    </x:ExcelWorkbook>
+    </xml>
+    <![endif]-->
+    <style>
+        body { font-family: 'Arial', sans-serif; font-size: 11pt; color: #0f172a; }
+        .title { font-size: 16pt; font-weight: bold; color: #1e3a8a; text-align: center; }
+        .subtitle { font-size: 11pt; color: #475569; text-align: center; font-style: italic; }
+        th { background-color: #0f172a; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #000000; padding: 8px; }
+        td { border: 1px solid #94a3b8; padding: 6px; }
+        .meta-title { font-weight: bold; color: #334155; }
+        .total-row { background-color: #f1f5f9; font-weight: bold; }
+        .sig-box { font-weight: bold; text-align: center; }
+        .sig-sub { font-size: 9pt; color: #64748b; font-style: italic; }
+    </style>
+</head>
+<body>
+    <table>
+        <tr><td colspan="6" style="font-size:13pt; font-weight:bold; color:#0f172a;">TỔNG KHO TRUNG CHUYỂN BƯU CHÍNH THÔNG MINH NEXUSLOG</td></tr>
+        <tr><td colspan="6" style="font-size:10pt; color:#64748b;">Hệ thống Digital Twin SCADA Realtime — Phân loại tự động YOLOv12 & Robot AMR</td></tr>
+        <tr><td colspan="6"></td></tr>
+        <tr><td colspan="6" class="title">HÓA ĐƠN KIÊM BIÊN BẢN BÀN GIAO VẬN CHUYỂN XUẤT KHO</td></tr>
+        <tr><td colspan="6" class="subtitle">(OUTBOUND FREIGHT DISPATCH INVOICE)</td></tr>
+        <tr><td colspan="6"></td></tr>
+        <tr>
+            <td colspan="3"><span class="meta-title">Mã chứng từ:</span> ${manifestId}</td>
+            <td colspan="3"><span class="meta-title">Thời gian lập:</span> ${nowStr}</td>
+        </tr>
+        <tr>
+            <td colspan="3"><span class="meta-title">Tuyến vận chuyển:</span> Hub Miền ${hub}</td>
+            <td colspan="3"><span class="meta-title">Xe tiếp nhận:</span> ${truckPlate}</td>
+        </tr>
+        <tr>
+            <td colspan="3"><span class="meta-title">Phạm vi xuất:</span> ${scopeStr}</td>
+            <td colspan="3"><span class="meta-title">Cửa xuất (Dock):</span> Cửa số 1 — Khu vực xuất hàng liên tỉnh</td>
+        </tr>
+        <tr><td colspan="6"></td></tr>
+        <tr style="height:28px;">
+            <th style="width:50px;">STT</th>
+            <th style="width:180px;">Mã Vận Đơn (Code128)</th>
+            <th style="width:160px;">Tỉnh Thành Đích</th>
+            <th style="width:180px;">Kệ Gom Lưu Trữ</th>
+            <th style="width:110px;">Cụm Hub</th>
+            <th style="width:110px;">Khối Lượng</th>
+        </tr>
+        ${rowsHtml}
+        <tr class="total-row" style="height:26px;">
+            <td colspan="3" style="text-align:center; font-weight:bold; border:1px solid #94a3b8;">TỔNG CỘNG ĐƠN HÀNG XUẤT:</td>
+            <td style="text-align:center; font-weight:bold; border:1px solid #94a3b8;">${totalCount} KIỆN HÀNG</td>
+            <td style="text-align:center; font-weight:bold; border:1px solid #94a3b8;">TỔNG CÂN:</td>
+            <td style="text-align:right; font-weight:bold; border:1px solid #94a3b8;">${totalWeight.toFixed(1)} kg</td>
+        </tr>
+        <tr><td colspan="6"></td></tr>
+        <tr><td colspan="6"></td></tr>
+        <tr>
+            <td colspan="2" class="sig-box">NGƯỜI LẬP HÓA ĐƠN<br><span class="sig-sub">(Ký và ghi rõ họ tên)</span></td>
+            <td colspan="2" class="sig-box">THỦ KHO XUẤT HÀNG<br><span class="sig-sub">(Ký và ghi rõ họ tên)</span></td>
+            <td colspan="2" class="sig-box">TÀI XẾ XE TẢI TIẾP NHẬN<br><span class="sig-sub">(Ký và ghi rõ họ tên)</span></td>
+        </tr>
+        <tr style="height:55px;">
+            <td colspan="2" style="vertical-align:bottom; text-align:center; border:none;"><strong>Admin SCADA</strong></td>
+            <td colspan="2" style="vertical-align:bottom; text-align:center; border:none;"><strong>Thủ Kho NexusLog</strong></td>
+            <td colspan="2" style="vertical-align:bottom; text-align:center; border:none;"><strong>Tài Xế Tuyến ${hub}</strong></td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+                    const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    const fileSuffix = selProv !== "ALL" ? `Tinh_${selProv}` : `Hub_${hub}`;
+                    a.download = `Hoa_Don_Xuat_Kho_${fileSuffix}_${Date.now()}.xls`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                });
+            }
+
+            if (btnConfirmDispatch) {
+                btnConfirmDispatch.addEventListener("click", () => {
+                    const hub = getSelectedHub();
+                    const selRackId = selectRack ? selectRack.value : "ALL";
+                    const selProv = selectProvince ? selectProvince.value : "ALL";
+
+                    const manifest = logicEngine.dispatchTruck({
+                        region: hub,
+                        rackId: selRackId,
+                        provinceName: selProv
+                    });
+
+                    populateFiltersForHub();
+                    renderManifestTable();
+
+                    const scopeStr = selProv !== "ALL" ? `Tỉnh ${selProv}` : (selRackId !== "ALL" ? `Kệ ${selRackId}` : `Toàn Tuyến Hub ${hub}`);
+                    alert(`✅ XUẤT HÀNG THÀNH CÔNG!
+
+• Phạm vi: ${scopeStr}
+• Số lượng: ${manifest.totalPackages} kiện
+• Xe vận chuyển: ${manifest.truckPlate}
+• Mã phiếu: ${manifest.manifestId}
+
+Kiện hàng đã được dỡ khỏi kệ để bàn giao cho tài xế.`);
+                    closeManifestModal();
+                });
+            }
+
         });
     </script>
+
+    <!-- MODAL POPUP: PHIẾU XUẤT HÀNG & BÀN GIAO VẬN CHUYỂN -->
+    <div id="dispatch-manifest-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.65); backdrop-filter:blur(6px); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#ffffff; border-radius:12px; width:780px; max-width:94vw; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 25px 50px rgba(0,0,0,0.3); overflow:hidden;">
+            <!-- Modal Header -->
+            <div style="background:#0f172a; color:#ffffff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-file-invoice" style="color:#38bdf8; font-size:1.3rem;"></i>
+                    <div>
+                        <h3 style="font-size:1.05rem; font-weight:800; margin:0; letter-spacing:0.3px;">PHIẾU XUẤT HÀNG & BÀN GIAO VẬN CHUYỂN</h3>
+                        <p style="font-size:0.72rem; color:#94a3b8; margin:2px 0 0 0;">Quản lý xuất kho linh hoạt theo Tuyến Hub, Kệ gom cụm hoặc từng Tỉnh đích</p>
+                    </div>
+                </div>
+                <button id="modal-close-manifest" style="background:none; border:none; color:#94a3b8; font-size:1.3rem; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Modal Body (Printable Area) -->
+            <div id="manifest-print-area" style="padding:18px 22px; overflow-y:auto; flex:1; font-size:0.85rem; color:#334155; line-height:1.5;">
+                <!-- Header Meta -->
+                <div style="border-bottom:2px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <h4 style="font-size:1.08rem; font-weight:800; color:#0f172a; margin:0;">TỔNG KHO TRUNG CHUYỂN BƯU CHÍNH NEXUSLOG</h4>
+                            <p style="font-size:0.75rem; color:#64748b; margin:2px 0 0 0;">Hệ thống Digital Twin SCADA Realtime — Điều phối tự động</p>
+                        </div>
+                        <div style="text-align:right;">
+                            <span id="manifest-id-badge" style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; background:#eff6ff; color:#1d4ed8; padding:3px 8px; border-radius:4px; font-weight:700;">PXK-883921-BAC</span>
+                            <div id="manifest-time" style="font-size:0.72rem; color:#64748b; margin-top:4px;">Giờ xuất: 15:00:00 (Chuyến chiều)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BỘ LỌC 2 TẦNG THÔNG MINH (THEO HUB, THEO KỆ, HOẶC THEO TỈNH) -->
+                <div style="margin-bottom:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px;">
+                    <!-- Tầng 1: Chọn Hub -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <strong style="color:#0f172a; font-size:0.82rem;"><i class="fa-solid fa-layer-group" style="color:#0284c7;"></i> Chọn Hub Tuyến:</strong>
+                            <div style="display:inline-flex; gap:10px; margin-left:4px; font-size:0.82rem;">
+                                <label style="cursor:pointer; font-weight:600;"><input type="radio" name="manifest-hub" value="Bắc" checked> Hub Bắc (12 Tỉnh)</label>
+                                <label style="cursor:pointer; font-weight:600;"><input type="radio" name="manifest-hub" value="Trung"> Hub Trung (10 Tỉnh)</label>
+                                <label style="cursor:pointer; font-weight:600;"><input type="radio" name="manifest-hub" value="Nam"> Hub Nam (12 Tỉnh)</label>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button id="btn-manifest-sample-data" style="background:#f59e0b; color:#ffffff; border:none; padding:4px 10px; border-radius:5px; font-weight:700; font-size:0.75rem; cursor:pointer;" title="Tự động nạp 8-10 kiện hàng mẫu lên kệ của Hub này để kiểm tra xuất phiếu và in ấn tức thì"><i class="fa-solid fa-bolt"></i> Nạp Đơn Mẫu</button>
+                            <span style="font-weight:800; color:#059669; font-size:0.85rem; background:#ecfdf5; border:1px solid #a7f3d0; padding:3px 8px; border-radius:6px;" id="manifest-pkg-count">0 kiện hàng</span>
+                        </div>
+                    </div>
+
+                    <!-- Tầng 2: Chọn Kệ gom hoặc Lọc đích danh Tỉnh -->
+                    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding-top:8px; border-top:1px dashed #cbd5e1; font-size:0.8rem;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <label style="font-weight:700; color:#334155;"><i class="fa-solid fa-warehouse" style="color:#9333ea;"></i> Kệ gom:</label>
+                            <select id="manifest-select-rack" style="padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.78rem; font-weight:600; background:#ffffff; outline:none;">
+                                <option value="ALL">-- Tất cả kệ của Hub --</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <label style="font-weight:700; color:#334155;"><i class="fa-solid fa-map-location-dot" style="color:#e11d48;"></i> Xuất riêng Tỉnh:</label>
+                            <select id="manifest-select-province" style="padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.78rem; font-weight:600; background:#ffffff; outline:none;">
+                                <option value="ALL">-- Tất cả tỉnh của Hub --</option>
+                            </select>
+                        </div>
+                        <div style="margin-left:auto; color:#64748b; font-size:0.78rem;">
+                            Tổng cân: <strong id="manifest-total-weight" style="color:#0f172a; font-family:'JetBrains Mono', monospace;">0.0 kg</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Truck Info & Scope Notice -->
+                <div style="background:#f1f5f9; padding:8px 12px; border-radius:6px; font-size:0.78rem; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                    <div>• <strong>Xe vận chuyển:</strong> <span id="manifest-truck-plate">29C-882.91 (Xe 8 Tấn Tuyến Hà Nội - Phía Bắc)</span></div>
+                    <div id="manifest-scope-notice" style="color:#0369a1; font-weight:600;">Đang xem toàn bộ các kệ thuộc Hub</div>
+                </div>
+
+                <!-- Package Table -->
+                <div style="max-height:220px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:12px;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.76rem;">
+                        <thead style="position:sticky; top:0; z-index:2;">
+                            <tr style="background:#0f172a; color:#ffffff; text-align:left;">
+                                <th style="padding:6px 10px;">STT</th>
+                                <th style="padding:6px 10px;">Mã Vận Đơn (Code128)</th>
+                                <th style="padding:6px 10px;">Tỉnh Thành Đích</th>
+                                <th style="padding:6px 10px;">Kệ Lưu Trữ</th>
+                                <th style="padding:6px 10px;">Cụm Hub</th>
+                                <th style="padding:6px 10px;">Khối Lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manifest-table-body">
+                            <tr><td colspan="6" style="text-align:center; padding:18px; color:#94a3b8;">Đang tải danh sách kiện hàng trên kệ...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Signatures -->
+                <div style="display:flex; justify-content:space-between; margin-top:12px; padding-top:10px; border-top:1px dashed #cbd5e1; text-align:center; font-size:0.78rem;">
+                    <div style="width:40%;">
+                        <strong>ĐIỀU ĐỘ VIÊN / THỦ KHO</strong><br>
+                        <span style="font-size:0.68rem; color:#64748b;">(Ký và ghi rõ họ tên)</span>
+                        <div style="height:36px;"></div>
+                        <strong>Quản Trị Viên SCADA</strong>
+                    </div>
+                    <div style="width:40%;">
+                        <strong>TÀI XẾ XE TẢI NHẬN HÀNG</strong><br>
+                        <span style="font-size:0.68rem; color:#64748b;">(Ký và ghi rõ họ tên)</span>
+                        <div style="height:36px;"></div>
+                        <strong id="manifest-driver-sign">Tài Xế Tuyến Liên Tỉnh</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; gap:8px;">
+                    <button id="btn-manifest-print" style="background:#0284c7; color:#ffffff; border:none; padding:7px 14px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;"><i class="fa-solid fa-print"></i> In Phiếu (Print PDF)</button>
+                    <button id="btn-manifest-excel" style="background:#10b981; color:#ffffff; border:none; padding:7px 14px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;"><i class="fa-solid fa-file-excel"></i> Xuất Hóa Đơn Excel (.xls)</button>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button id="btn-manifest-confirm-dispatch" style="background:#059669; color:#ffffff; border:none; padding:7px 16px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;"><i class="fa-solid fa-truck-ramp-box"></i> Xác Nhận Xuất Hàng</button>
+                    <button id="btn-manifest-close-footer" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155; padding:7px 14px; border-radius:6px; font-weight:600; font-size:0.8rem; cursor:pointer;">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>
 

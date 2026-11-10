@@ -2673,20 +2673,21 @@ function init3DViewControls() {
     const frame3D = document.getElementById("canvas-3d-frame");
     const navTab3D = document.getElementById("nav-tab-3d");
     const navTab2D = document.querySelector('[data-tab="tab-canvas"]');
+    const toolbar2D = document.getElementById("toolbar-actions-2d");
+    const simTitle = document.getElementById("simulation-view-title");
 
     function switchTo3D() {
         if (btnToggle2D) btnToggle2D.classList.remove("active");
         if (btnToggle3D) btnToggle3D.classList.add("active");
         if (frame2D) frame2D.style.display = "none";
+        if (toolbar2D) toolbar2D.style.display = "none";
+        if (simTitle) simTitle.textContent = "Digital Twin Kho Hàng 3D AI (Three.js Industrial SCADA)";
+        const grid = document.querySelector(".canvas-dashboard-grid");
+        const sidebar = document.querySelector(".telemetry-sidebar");
+        if (grid) grid.classList.add("view-3d-fullwidth");
+        if (sidebar) sidebar.style.display = "none";
         if (frame3D) {
             frame3D.style.display = "block";
-            if (window.Warehouse3D) {
-                if (!window.Warehouse3D.initialized) {
-                    window.Warehouse3D.init("warehouse-3d-container");
-                } else {
-                    window.Warehouse3D.resize();
-                }
-            }
         }
     }
 
@@ -2694,11 +2695,40 @@ function init3DViewControls() {
         if (btnToggle3D) btnToggle3D.classList.remove("active");
         if (btnToggle2D) btnToggle2D.classList.add("active");
         if (frame3D) frame3D.style.display = "none";
+        if (toolbar2D) toolbar2D.style.display = "flex";
+        if (simTitle) simTitle.textContent = "Digital Twin Kho Hàng Thông Minh (SCADA Realtime)";
+        const grid = document.querySelector(".canvas-dashboard-grid");
+        const sidebar = document.querySelector(".telemetry-sidebar");
+        if (grid) grid.classList.remove("view-3d-fullwidth");
+        if (sidebar) sidebar.style.display = "";
         if (frame2D) frame2D.style.display = "block";
     }
 
     if (btnToggle3D) btnToggle3D.addEventListener("click", switchTo3D);
     if (btnToggle2D) btnToggle2D.addEventListener("click", switchTo2D);
+
+    // Đồng bộ số liệu từ 3D Digital Twin về một nguồn chân lý duy nhất (Single Source of Truth)
+    window.addEventListener("message", (event) => {
+        if (event.data && event.data.type === "SYNC_3D_METRICS") {
+            const m = event.data.metrics;
+            if (!m) return;
+            const totalPkgEl = document.getElementById("kpi-total-packages");
+            if (totalPkgEl) totalPkgEl.textContent = m.totalProcessed.toLocaleString("vi-VN");
+            
+            const gatesEl = document.getElementById("kpi-active-gates");
+            if (gatesEl) gatesEl.textContent = m.activeGates;
+            
+            const accEl = document.getElementById("kpi-ai-accuracy");
+            if (accEl) accEl.textContent = m.accuracy;
+            
+            const amrStateEl = document.getElementById("kpi-amr-state");
+            if (amrStateEl) amrStateEl.textContent = m.amrSummary;
+            
+            const fpsEl = document.getElementById("app-live-fps");
+            if (fpsEl) fpsEl.textContent = `${m.fps} FPS Live`;
+        }
+    });
+
 
     if (navTab3D) {
         navTab3D.addEventListener("click", () => {

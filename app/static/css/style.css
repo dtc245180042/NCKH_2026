@@ -796,6 +796,10 @@ body.light-theme {
     display: grid;
     grid-template-columns: 1fr 340px;
     gap: 1.5rem;
+    min-width: 0;
+}
+.canvas-card, .telemetry-sidebar {
+    min-width: 0;
 }
 
 /* White Card */
@@ -830,6 +834,7 @@ body.light-theme {
     display: flex;
     align-items: center;
     gap: 0.65rem;
+    flex-wrap: wrap;
 }
 
 .fps-badge {
@@ -894,11 +899,12 @@ body.light-theme {
 .canvas-legend-row {
     display: flex;
     justify-content: center;
-    gap: 1.75rem;
+    gap: 1rem 1.75rem;
     margin-top: 1.25rem;
     font-size: 0.82rem;
     font-weight: 500;
     color: var(--text-body);
+    flex-wrap: wrap;
 }
 
 .legend-dot {
@@ -2389,4 +2395,62 @@ body.light-theme {
 
 .inspector-field-row .val {
     color: #0f172a;
+}
+
+
+/* ==========================================================================
+   RESPONSIVE DESIGN CHO CAN VÂM & TELEMETRY (1280px, 1024px, 390px)
+   ========================================================================== */
+@media (max-width: 1024px) {
+    .canvas-dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+    }
+    .telemetry-sidebar {
+        width: 100%;
+    }
+    .kpi-mini-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+    .app-header {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.75rem 1rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .dashboard-body {
+        padding: 0.75rem;
+    }
+    .white-card {
+        padding: 1rem;
+    }
+    .card-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.85rem;
+    }
+    .card-actions {
+        width: 100%;
+        gap: 0.4rem;
+    }
+    .kpi-mini-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.65rem;
+    }
+    .canvas-legend-row {
+        gap: 0.5rem 0.85rem;
+        font-size: 0.75rem;
+    }
+    .canvas-frame {
+        overflow-x: auto;
+    }
+    .canvas-3d-frame {
+        height: 480px !important;
+    }
+}
+
+.canvas-dashboard-grid.view-3d-fullwidth {
+    grid-template-columns: 1fr !important;
 }
