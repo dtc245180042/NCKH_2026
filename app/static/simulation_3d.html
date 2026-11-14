@@ -1,0 +1,1767 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô Phỏng Kho 3D SCADA Realtime - NEXUSLOG Digital Twin</title>
+    <!-- Google Fonts & FontAwesome -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        body {
+            background-color: #f1f5f9;
+            color: #0f172a;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 1. Header & Toolbar */
+        .app-bar {
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 7px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 20;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            gap: 12px;
+        }
+        .brand-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 210px;
+        }
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: #0284c7;
+            color: #ffffff;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .brand-text h2 {
+            font-size: 1.02rem;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+        .brand-text p {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+        .btn-action {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.15s ease;
+        }
+        .btn-action:hover:not(:disabled) {
+            background: #ffffff;
+            border-color: #0284c7;
+            color: #0284c7;
+        }
+        .btn-action.active {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+            box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+        }
+        .btn-action:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+        .btn-speed {
+            padding: 5px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+        }
+
+        /* Nút E-STOP đặc biệt */
+        .btn-estop {
+            background: #ef4444 !important;
+            color: #ffffff !important;
+            border-color: #dc2626 !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.3px;
+        }
+        .btn-estop:hover {
+            background: #dc2626 !important;
+        }
+        .btn-estop.active-estop {
+            background: #991b1b !important;
+            animation: estop-btn-flash 0.7s infinite alternate ease-in-out;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.7);
+        }
+        @keyframes estop-btn-flash {
+            from { opacity: 1; }
+            to { opacity: 0.75; }
+        }
+
+        /* 2. Main 3D View & HUD Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        #canvas-3d-wrapper {
+            flex: 1;
+            position: relative;
+            background: #f8fafc;
+        }
+
+        /* Camera Preset Floating Pills */
+        .cam-controls {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            display: flex;
+            gap: 6px;
+            z-index: 10;
+        }
+        .cam-pill {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(8px);
+            border: 1px solid #cbd5e1;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #334155;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+        }
+        .cam-pill.active {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+        }
+
+        /* 3. Cột Phải: Bảng chỉ số KPI, AMR & Dòng sự kiện */
+        .right-sidebar {
+            width: 330px;
+            background: #ffffff;
+            border-left: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.03);
+        }
+        .sidebar-section {
+            padding: 10px 14px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .section-title {
+            font-size: 0.76rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #64748b;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+        .kpi-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 7px;
+            padding: 7px 8px;
+            text-align: center;
+        }
+        .kpi-val {
+            font-size: 1.15rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            color: #0f172a;
+        }
+        .kpi-lbl {
+            font-size: 0.65rem;
+            color: #64748b;
+            margin-top: 1px;
+        }
+
+        /* AMR Status List with Battery Bar & Task */
+        .amr-status-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 6px 9px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            margin-bottom: 5px;
+            font-size: 0.74rem;
+        }
+        .amr-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .amr-tag {
+            font-weight: 700;
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: #ffffff;
+            font-size: 0.68rem;
+        }
+        .tag-bac { background: #0284c7; }
+        .tag-trung { background: #9333ea; }
+        .tag-nam { background: #10b981; }
+
+        /* Badge Trạng Thái State Machine */
+        .badge-state {
+            font-size: 0.66rem;
+            font-weight: 700;
+            padding: 1px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .state-idle { background: #e0f2fe; color: #0369a1; }
+        .state-run  { background: #dcfce7; color: #15803d; }
+        .state-chg  { background: #fef3c7; color: #b45309; }
+        .state-err  { background: #fee2e2; color: #b91c1c; }
+
+        /* Thanh Pin Pin Progress */
+        .battery-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.68rem;
+            color: #475569;
+        }
+        .battery-bar-wrap {
+            flex: 1;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .battery-bar-fill {
+            height: 100%;
+            width: 100%;
+            background: #10b981;
+            transition: width 0.3s ease, background-color 0.3s ease;
+        }
+        .battery-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            min-width: 32px;
+            text-align: right;
+        }
+        .amr-task-text {
+            font-size: 0.66rem;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Event Logs */
+        .event-log-container {
+            flex: 1;
+            padding: 8px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            background: #fcfdfe;
+            max-height: 220px;
+        }
+        .hud-log-row {
+            padding: 4px 6px;
+            border-radius: 5px;
+            font-size: 0.7rem;
+            line-height: 1.3;
+            border-left: 3px solid #cbd5e1;
+            background: #ffffff;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .hud-log-row.log-ai { border-left-color: #06b6d4; background: #ecfeff; }
+        .hud-log-row.log-sort { border-left-color: #f59e0b; background: #fefce8; }
+        .hud-log-row.log-amr { border-left-color: #0284c7; background: #eff6ff; }
+        .hud-log-row.log-storage { border-left-color: #10b981; background: #f0fdf4; }
+        .hud-log-row.log-export { border-left-color: #8b5cf6; background: #f5f3ff; font-weight: 700; }
+        .hud-log-row.log-alarm { border-left-color: #ef4444; background: #fef2f2; font-weight: 700; }
+        .hud-log-row.log-warn { border-left-color: #f59e0b; background: #fffbeb; }
+        .log-time {
+            font-size: 0.64rem;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+            margin-right: 3px;
+        }
+        .log-type-tag {
+            font-size: 0.64rem;
+            font-weight: 700;
+            margin-right: 3px;
+        }
+
+        /* Legend Màu Trạng Thái */
+        .status-legend {
+            padding: 6px 14px;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.66rem;
+            color: #475569;
+        }
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* E-STOP Fullscreen Border Overlay */
+        .estop-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9998;
+            box-shadow: inset 0 0 50px 20px rgba(239, 68, 68, 0.85);
+            border: 6px solid #ef4444;
+            display: none;
+            animation: estop-pulse 0.75s infinite alternate ease-in-out;
+        }
+        @keyframes estop-pulse {
+            from { box-shadow: inset 0 0 25px 10px rgba(239, 68, 68, 0.6); }
+            to { box-shadow: inset 0 0 65px 28px rgba(239, 68, 68, 0.95); }
+        }
+
+        /* Toast Popup System */
+        .toast-container {
+            position: fixed;
+            top: 60px;
+            right: 350px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast-msg {
+            background: rgba(15, 23, 42, 0.94);
+            color: #ffffff;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+            border-left: 4px solid #0284c7;
+            animation: slideInToast 0.25s ease-out;
+            pointer-events: auto;
+            max-width: 380px;
+        }
+        .toast-msg.toast-success { border-left-color: #10b981; }
+        .toast-msg.toast-warning { border-left-color: #f59e0b; }
+        .toast-msg.toast-error   { border-left-color: #ef4444; }
+        @keyframes slideInToast {
+            from { transform: translateX(40px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Banner Cảnh Báo Không Đường */
+        .toast-banner {
+            position: absolute;
+            top: 14px;
+            right: 350px;
+            background: #ef4444;
+            color: #ffffff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+            z-index: 50;
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.03); }
+        }
+
+        /* Sub-toolbar SCADA Manual Override */
+        .scada-override-bar {
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 4px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.74rem;
+            z-index: 15;
+        }
+        .scada-badge {
+            background: #0f172a;
+            color: #38bdf8;
+            padding: 2px 7px;
+            border-radius: 4px;
+            font-weight: 800;
+            font-size: 0.68rem;
+            font-family: 'JetBrains Mono', monospace;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Overlay Dừng Khẩn Cấp E-STOP Toàn Kho -->
+    <div id="estop-overlay" class="estop-overlay"></div>
+
+    <!-- Hệ Thống Toast Thông Báo -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- 1. Thanh Công Cụ Header Chính -->
+    <header class="app-bar">
+        <div class="brand-title">
+            <div class="brand-icon"><i class="fa-solid fa-cube"></i></div>
+            <div class="brand-text">
+                <h2>NEXUSLOG 3D</h2>
+                <p>Digital Twin SCADA (Lưới A* 36×22 • 3 Trạm Sạc)</p>
+            </div>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="btn-action" id="btn-spawn"><i class="fa-solid fa-plus"></i> Tạo Kiện Hàng</button>
+            <button class="btn-action active" id="btn-auto-spawn"><i class="fa-solid fa-repeat"></i> Tự Động: BẬT</button>
+            <button class="btn-action" id="btn-flexible"><i class="fa-solid fa-shuffle"></i> Linh Hoạt: TẮT</button>
+            <button class="btn-action" id="btn-clear-obs"><i class="fa-solid fa-eraser"></i> Xóa Vật Cản</button>
+            
+            <!-- T2: Nút Mô Phỏng Sự Cố Cổng -->
+            <button class="btn-action" id="btn-simulate-fault" style="color:#b91c1c; font-weight:700;"><i class="fa-solid fa-triangle-exclamation"></i> Mô Phỏng Sự Cố</button>
+            <button class="btn-action" id="btn-test-occlusion" style="color:#0284c7;"><i class="fa-solid fa-cloud"></i> Test Che Khuất</button>
+            <button class="btn-action" id="btn-dispatch-truck" style="background:#059669; color:#ffffff; border-color:#059669; font-weight:700;"><i class="fa-solid fa-file-invoice"></i> Xuất Phiếu Xuất Hàng</button>
+            <button class="btn-action" id="btn-siren"><i class="fa-solid fa-volume-high"></i> Còi Báo</button>
+            
+            <!-- Tốc độ 1x / 2x / 4x -->
+            <div style="display:flex; gap:2px; margin-left:4px; background:#e2e8f0; padding:2px; border-radius:6px;">
+                <button class="btn-action btn-speed active" data-speed="1.0">1x</button>
+                <button class="btn-action btn-speed" data-speed="2.0">2x</button>
+                <button class="btn-action btn-speed" data-speed="4.0">4x</button>
+            </div>
+
+            <!-- Xuất JSON -->
+            <button class="btn-action" id="btn-export-json" title="Xuất trạng thái JSON"><i class="fa-solid fa-file-export"></i> JSON</button>
+        </div>
+    </header>
+
+    <!-- T3: Thanh SCADA Manual Override Điều Khiển Trực Tiếp -->
+    <div class="scada-override-bar">
+        <span class="scada-badge"><i class="fa-solid fa-sliders"></i> MANUAL OVERRIDE</span>
+        
+        <!-- 1. E-STOP Toàn Kho -->
+        <button class="btn-action btn-estop" id="btn-estop-warehouse" title="Dừng khẩn cấp toàn bộ xe AMR, băng chuyền và cổng phân loại">
+            <i class="fa-solid fa-hand"></i> <span id="estop-btn-text">E-STOP Toàn Kho</span>
+        </button>
+
+        <!-- 2. Gỡ Kẹt Băng Tải -->
+        <button class="btn-action" id="btn-unjam-conveyor" title="Đảo chiều con lăn 2 giây để gỡ kẹt kiện hàng">
+            <i class="fa-solid fa-rotate-left"></i> Gỡ Kẹt Băng Tải (Đảo 2s)
+        </button>
+
+        <!-- 3. Force Cổng Phân Loại -->
+        <div style="display:inline-flex; align-items:center; gap:3px;">
+            <span style="font-weight:700; color:#475569; font-size:0.72rem;">Force Cổng:</span>
+            <button class="btn-action" id="btn-force-gate-1" style="padding:4px 7px;">Cổng 1</button>
+            <button class="btn-action" id="btn-force-gate-2" style="padding:4px 7px;">Cổng 2</button>
+            <button class="btn-action" id="btn-force-gate-3" style="padding:4px 7px;">Cổng 3</button>
+        </div>
+
+        <!-- 4. Điều AMR-01 Về Sạc -->
+        <button class="btn-action" id="btn-charge-amr01" title="Hủy nhiệm vụ, điều xe AMR-01 về trạm sạc gần nhất">
+            <i class="fa-solid fa-charging-station" style="color:#d97706;"></i> AMR-01 Về Sạc
+        </button>
+
+        <!-- 5. Khôi Phục AMR -->
+        <button class="btn-action" id="btn-recover-all-amr" style="color:#059669; font-weight:700;" title="Khôi phục AMR từ ERROR / E-STOP / BLOCKED về IDLE (hoặc sạc nếu pin < 20%)">
+            <i class="fa-solid fa-wrench"></i> Khôi Phục AMR
+        </button>
+    </div>
+
+    <!-- Banner Cảnh Báo Không Có Đường -->
+    <div id="no-path-toast" class="toast-banner">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span>CẢNH BÁO: Robot bị chặn kín đường đi! Hãy gỡ bớt vật cản.</span>
+    </div>
+
+    <!-- 2. Không gian 3D & Cột Chỉ Số -->
+    <main class="main-container">
+        <!-- Khung Three.js Canvas -->
+        <div id="canvas-3d-wrapper">
+            <!-- Camera Preset Floating Buttons -->
+            <div class="cam-controls">
+                <button class="cam-pill active" id="cam-iso"><i class="fa-solid fa-cubes"></i> Phối Cảnh</button>
+                <button class="cam-pill" id="cam-top"><i class="fa-solid fa-arrows-to-dot"></i> Nhìn Từ Trên</button>
+                <button class="cam-pill" id="cam-follow"><i class="fa-solid fa-video"></i> Bám Theo AMR</button>
+                <button class="cam-pill" id="cam-reset" title="Về góc nhìn mặc định"><i class="fa-solid fa-rotate-left"></i> Góc Chuẩn</button>
+                <button class="cam-pill" id="cam-fullscreen" title="Phóng to toàn màn hình"><i class="fa-solid fa-expand"></i> Toàn Màn Hình</button>
+            </div>
+
+            <!-- Gợi ý khi Tự Động tắt & Robot rảnh rỗi -->
+            <div id="idle-guide-banner" class="idle-guide-banner" style="display: none; position: absolute; bottom: 18px; left: 50%; transform: translateX(-50%); background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px); border: 1px solid #0284c7; color: #ffffff; padding: 7px 18px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; box-shadow: 0 4px 16px rgba(0,0,0,0.2); z-index: 25; align-items: center; gap: 8px; pointer-events: none;">
+                <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i>
+                <span>Tự động đang TẮT — Bấm <strong>"Tự Động"</strong> hoặc <strong>"Tạo Kiện Hàng"</strong> để bắt đầu mô phỏng</span>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Bảng KPI, AMR & Live Events -->
+        <aside class="right-sidebar">
+            <!-- 1. Chỉ số KPI Vận Hành (T4) -->
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <span>Chỉ Số Vận Hành (KPI)</span>
+                    <span style="font-size:0.68rem; color:#10b981;"><i class="fa-solid fa-circle"></i> Live 60 FPS</span>
+                </div>
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-val" id="hud-processed">0</div>
+                        <div class="kpi-lbl">Đã xử lý (Kiện)</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-val" id="hud-active-amrs">0 / 6</div>
+                        <div class="kpi-lbl">AMR Hoạt Động</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-val" id="hud-jammed-gates" style="color:#10b981;">0</div>
+                        <div class="kpi-lbl">Cổng Đang Kẹt</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-val" id="hud-avg-battery" style="color:#0284c7;">100%</div>
+                        <div class="kpi-lbl">Pin Trung Bình</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Đội 6 Robot AMR Tự Hành (T1 & T4) -->
+            <div class="sidebar-section" style="flex: 0 0 auto; max-height: 275px; overflow-y: auto;">
+                <div class="section-title">
+                    <span>Đội 6 Xe AMR Tự Hành</span>
+                    <span style="font-size:0.68rem; color:#0284c7; font-weight:700;">Pin & Nhiệm Vụ</span>
+                </div>
+
+                <!-- AMR-01 (Hub Bắc) -->
+                <div class="amr-status-item">
+                    <div class="amr-header-row">
+                        <div><span class="amr-tag tag-bac">AMR-01</span> <span style="font-weight:700;">Bắc 1</span></div>
+                        <div id="hud-amr-state-1"><span class="badge-state state-idle">Rảnh</span></div>
+                    </div>
+                    <div class="battery-row">
+                        <i class="fa-solid fa-battery-half"></i>
+                        <div class="battery-bar-wrap"><div class="battery-bar-fill" id="hud-amr-bar-1" style="width:100%;"></div></div>
+                        <span class="battery-num" id="hud-amr-bat-1">100%</span>
+                    </div>
+                    <div class="amr-task-text" id="hud-amr-task-1">Sẵn sàng nhận lệnh</div>
+                </div>
+
+                <!-- AMR-02 (Hub Bắc) -->
+                <div class="amr-status-item">
+                    <div class="amr-header-row">
+                        <div><span class="amr-tag tag-bac">AMR-02</span> <span style="font-weight:700;">Bắc 2</span></div>
+                        <div id="hud-amr-state-2"><span class="badge-state state-idle">Rảnh</span></div>
+                    </div>
+                    <div class="battery-row">
+                        <i class="fa-solid fa-battery-half"></i>
+                        <div class="battery-bar-wrap"><div class="battery-bar-fill" id="hud-amr-bar-2" style="width:100%;"></div></div>
+                        <span class="battery-num" id="hud-amr-bat-2">100%</span>
+                    </div>
+                    <div class="amr-task-text" id="hud-amr-task-2">Sẵn sàng nhận lệnh</div>
+                </div>
+
+                <!-- AMR-03 (Hub Trung) -->
+                <div class="amr-status-item">
+                    <div class="amr-header-row">
+                        <div><span class="amr-tag tag-trung">AMR-03</span> <span style="font-weight:700;">Trung 1</span></div>
+                        <div id="hud-amr-state-3"><span class="badge-state state-idle">Rảnh</span></div>
+                    </div>
+                    <div class="battery-row">
+                        <i class="fa-solid fa-battery-half"></i>
+                        <div class="battery-bar-wrap"><div class="battery-bar-fill" id="hud-amr-bar-3" style="width:100%;"></div></div>
+                        <span class="battery-num" id="hud-amr-bat-3">100%</span>
+                    </div>
+                    <div class="amr-task-text" id="hud-amr-task-3">Sẵn sàng nhận lệnh</div>
+                </div>
+
+                <!-- AMR-04 (Hub Trung) -->
+                <div class="amr-status-item">
+                    <div class="amr-header-row">
+                        <div><span class="amr-tag tag-trung">AMR-04</span> <span style="font-weight:700;">Trung 2</span></div>
+                        <div id="hud-amr-state-4"><span class="badge-state state-idle">Rảnh</span></div>
+                    </div>
+                    <div class="battery-row">
+                        <i class="fa-solid fa-battery-half"></i>
+                        <div class="battery-bar-wrap"><div class="battery-bar-fill" id="hud-amr-bar-4" style="width:100%;"></div></div>
+                        <span class="battery-num" id="hud-amr-bat-4">100%</span>
+                    </div>
+                    <div class="amr-task-text" id="hud-amr-task-4">Sẵn sàng nhận lệnh</div>
+                </div>
+
+                <!-- AMR-05 (Hub Nam) -->
+                <div class="amr-status-item">
+                    <div class="amr-header-row">
+                        <div><span class="amr-tag tag-nam">AMR-05</span> <span style="font-weight:700;">Nam 1</span></div>
+                        <div id="hud-amr-state-5"><span class="badge-state state-idle">Rảnh</span></div>
+                    </div>
+                    <div class="battery-row">
+                        <i class="fa-solid fa-battery-half"></i>
+                        <div class="battery-bar-wrap"><div class="battery-bar-fill" id="hud-amr-bar-5" style="width:100%;"></div></div>
+                        <span class="battery-num" id="hud-amr-bat-5">100%</span>
+                    </div>
+                    <div class="amr-task-text" id="hud-amr-task-5">Sẵn sàng nhận lệnh</div>
+                </div>
+
+                <!-- AMR-06 (Hub Nam) -->
+                <div class="amr-status-item">
+                    <div class="amr-header-row">
+                        <div><span class="amr-tag tag-nam">AMR-06</span> <span style="font-weight:700;">Nam 2</span></div>
+                        <div id="hud-amr-state-6"><span class="badge-state state-idle">Rảnh</span></div>
+                    </div>
+                    <div class="battery-row">
+                        <i class="fa-solid fa-battery-half"></i>
+                        <div class="battery-bar-wrap"><div class="battery-bar-fill" id="hud-amr-bar-6" style="width:100%;"></div></div>
+                        <span class="battery-num" id="hud-amr-bat-6">100%</span>
+                    </div>
+                    <div class="amr-task-text" id="hud-amr-task-6">Sẵn sàng nhận lệnh</div>
+                </div>
+            </div>
+
+            <!-- Legend Màu Trạng Thái (T4) -->
+            <div class="status-legend">
+                <div class="legend-item"><span class="legend-dot" style="background:#10b981;"></span> Vận hành</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#0284c7;"></span> Chờ việc</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span> Trạm sạc</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span> Sự cố/E-STOP</div>
+            </div>
+
+            <!-- 3. Dòng sự kiện thời gian thực (Giữ 50 dòng) -->
+            <div class="sidebar-section" style="padding-bottom:4px; padding-top:8px;">
+                <div class="section-title">
+                    <span>Dòng Sự Kiện Live</span>
+                    <span style="font-size:0.65rem; color:#64748b;">(50 sự kiện gần nhất)</span>
+                </div>
+            </div>
+            <div class="event-log-container" id="hud-event-logs">
+                <!-- 50 sự kiện mới nhất sẽ được đổ vào đây -->
+            </div>
+        </aside>
+    </main>
+
+    <!-- T2: MODAL POPUP MÔ PHỎNG SỰ CỐ CỔNG CÓ NGUYÊN NHÂN -->
+    <div id="fault-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.65); backdrop-filter:blur(5px); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#ffffff; border-radius:12px; width:440px; max-width:92vw; box-shadow:0 25px 50px rgba(0,0,0,0.3); overflow:hidden; border:1px solid #cbd5e1;">
+            <!-- Header Modal -->
+            <div style="background:#0f172a; color:#ffffff; padding:12px 18px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color:#ef4444; font-size:1.15rem;"></i>
+                    <h3 style="font-size:0.95rem; font-weight:800; margin:0;">MÔ PHỎNG SỰ CỐ CỔNG PHÂN LOẠI</h3>
+                </div>
+                <button id="modal-close-fault" style="background:none; border:none; color:#94a3b8; font-size:1.2rem; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <!-- Body Modal -->
+            <div style="padding:16px 20px; font-size:0.82rem; color:#334155;">
+                <p style="margin-bottom:12px; color:#64748b;">Hệ thống kiểm tra điều kiện nghiêm ngặt: <em>Chỉ kích hoạt khi thực tế có kiện hàng đang tiếp cận hoặc nằm ở máng cổng!</em></p>
+                
+                <!-- Chọn Cổng -->
+                <div style="margin-bottom:12px;">
+                    <label style="font-weight:700; display:block; margin-bottom:5px; color:#0f172a;">1. Chọn Cổng Phân Loại:</label>
+                    <select id="fault-select-gate" style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #cbd5e1; font-weight:600; outline:none; font-size:0.82rem;">
+                        <option value="1">Cổng 1 — Hub Bắc (Kệ gom 1..10)</option>
+                        <option value="2">Cổng 2 — Hub Trung (Kệ gom 11..20)</option>
+                        <option value="3">Cổng 3 — Hub Nam (Kệ gom 21..32)</option>
+                    </select>
+                </div>
+
+                <!-- Chọn Nguyên Nhân Sự Cố (T2) -->
+                <div style="margin-bottom:14px;">
+                    <label style="font-weight:700; display:block; margin-bottom:5px; color:#0f172a;">2. Chọn Nguyên Nhân Gây Sự Cố:</label>
+                    <select id="fault-select-cause" style="width:100%; padding:7px 10px; border-radius:6px; border:1px solid #cbd5e1; font-weight:600; outline:none; font-size:0.82rem;">
+                        <option value="OVERLOAD">a) Quá tải hàng đợi máng (> 3 kiện chờ > 5s)</option>
+                        <option value="SENSOR_FAULT">b) Cảm biến quang phân loại bị bám bụi / lỗi tín hiệu</option>
+                        <option value="DEADLOCK">c) Xung đột Deadlock (2 AMR tranh giành tiếp cận máng)</option>
+                    </select>
+                </div>
+
+                <!-- Ghi chú hậu quả -->
+                <div style="background:#fef2f2; border-left:3px solid #ef4444; padding:8px 12px; border-radius:4px; font-size:0.75rem; color:#991b1b; line-height:1.4;">
+                    Khi kích hoạt: Cổng chuyển đèn cảnh báo đỏ/cam, băng tải tạm dừng cấp hàng tới cổng, AMR liên quan sang <code>BLOCKED</code> và ghi log SCADA.
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:10px 18px; display:flex; justify-content:flex-end; gap:8px;">
+                <button id="btn-cancel-fault" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155; padding:6px 14px; border-radius:6px; font-weight:600; font-size:0.8rem; cursor:pointer;">Hủy</button>
+                <button id="btn-confirm-fault" style="background:#b91c1c; color:#ffffff; border:none; padding:6px 16px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;"><i class="fa-solid fa-bolt"></i> Kích Hoạt Sự Cố</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL POPUP: PHIẾU XUẤT HÀNG & BÀN GIAO VẬN CHUYỂN -->
+    <div id="dispatch-manifest-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(15,23,42,0.65); backdrop-filter:blur(6px); z-index:9999; justify-content:center; align-items:center;">
+        <div style="background:#ffffff; border-radius:12px; width:780px; max-width:94vw; max-height:90vh; display:flex; flex-direction:column; box-shadow:0 25px 50px rgba(0,0,0,0.3); overflow:hidden;">
+            <!-- Modal Header -->
+            <div style="background:#0f172a; color:#ffffff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-file-invoice" style="color:#38bdf8; font-size:1.3rem;"></i>
+                    <div>
+                        <h3 style="font-size:1.05rem; font-weight:800; margin:0; letter-spacing:0.3px;">PHIẾU XUẤT HÀNG & BÀN GIAO VẬN CHUYỂN</h3>
+                        <p style="font-size:0.72rem; color:#94a3b8; margin:2px 0 0 0;">Quản lý xuất kho linh hoạt theo Tuyến Hub, Kệ gom cụm hoặc từng Tỉnh đích</p>
+                    </div>
+                </div>
+                <button id="modal-close-manifest" style="background:none; border:none; color:#94a3b8; font-size:1.3rem; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Modal Body (Printable Area) -->
+            <div id="manifest-print-area" style="padding:18px 22px; overflow-y:auto; flex:1; font-size:0.85rem; color:#334155; line-height:1.5;">
+                <!-- Header Meta -->
+                <div style="border-bottom:2px solid #e2e8f0; padding-bottom:10px; margin-bottom:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div>
+                            <h4 style="font-size:1.08rem; font-weight:800; color:#0f172a; margin:0;">TỔNG KHO TRUNG CHUYỂN BƯU CHÍNH NEXUSLOG</h4>
+                            <p style="font-size:0.75rem; color:#64748b; margin:2px 0 0 0;">Hệ thống Digital Twin SCADA Realtime — Điều phối tự động</p>
+                        </div>
+                        <div style="text-align:right;">
+                            <span id="manifest-id-badge" style="font-family:'JetBrains Mono', monospace; font-size:0.8rem; background:#eff6ff; color:#1d4ed8; padding:3px 8px; border-radius:4px; font-weight:700;">PXK-883921-BAC</span>
+                            <div id="manifest-time" style="font-size:0.72rem; color:#64748b; margin-top:4px;">Giờ xuất: 15:00:00 (Chuyến chiều)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BỘ LỌC 2 TẦNG THÔNG MINH (THEO HUB, THEO KỆ, HOẶC THEO TỈNH) -->
+                <div style="margin-bottom:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px 14px;">
+                    <!-- Tầng 1: Chọn Hub -->
+                    <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px; margin-bottom:8px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <strong style="color:#0f172a; font-size:0.82rem;"><i class="fa-solid fa-layer-group" style="color:#0284c7;"></i> Chọn Hub Tuyến:</strong>
+                            <div style="display:inline-flex; gap:10px; margin-left:4px; font-size:0.82rem;">
+                                <label style="cursor:pointer; font-weight:600;"><input type="radio" name="manifest-hub" value="Bắc" checked> Hub Bắc (12 Tỉnh)</label>
+                                <label style="cursor:pointer; font-weight:600;"><input type="radio" name="manifest-hub" value="Trung"> Hub Trung (10 Tỉnh)</label>
+                                <label style="cursor:pointer; font-weight:600;"><input type="radio" name="manifest-hub" value="Nam"> Hub Nam (12 Tỉnh)</label>
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <button id="btn-manifest-sample-data" style="background:#f59e0b; color:#ffffff; border:none; padding:4px 10px; border-radius:5px; font-weight:700; font-size:0.75rem; cursor:pointer;" title="Tự động nạp 8-10 kiện hàng mẫu lên kệ của Hub này để kiểm tra xuất phiếu và in ấn tức thì"><i class="fa-solid fa-bolt"></i> Nạp Đơn Mẫu</button>
+                            <span style="font-weight:800; color:#059669; font-size:0.85rem; background:#ecfdf5; border:1px solid #a7f3d0; padding:3px 8px; border-radius:6px;" id="manifest-pkg-count">0 kiện hàng</span>
+                        </div>
+                    </div>
+
+                    <!-- Tầng 2: Chọn Kệ gom hoặc Lọc đích danh Tỉnh -->
+                    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding-top:8px; border-top:1px dashed #cbd5e1; font-size:0.8rem;">
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <label style="font-weight:700; color:#334155;"><i class="fa-solid fa-warehouse" style="color:#9333ea;"></i> Kệ gom:</label>
+                            <select id="manifest-select-rack" style="padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.78rem; font-weight:600; background:#ffffff; outline:none;">
+                                <option value="ALL">-- Tất cả kệ của Hub --</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <label style="font-weight:700; color:#334155;"><i class="fa-solid fa-map-location-dot" style="color:#e11d48;"></i> Xuất riêng Tỉnh:</label>
+                            <select id="manifest-select-province" style="padding:3px 8px; border-radius:6px; border:1px solid #cbd5e1; font-size:0.78rem; font-weight:600; background:#ffffff; outline:none;">
+                                <option value="ALL">-- Tất cả tỉnh của Hub --</option>
+                            </select>
+                        </div>
+                        <div style="margin-left:auto; color:#64748b; font-size:0.78rem;">
+                            Tổng cân: <strong id="manifest-total-weight" style="color:#0f172a; font-family:'JetBrains Mono', monospace;">0.0 kg</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Truck Info & Scope Notice -->
+                <div style="background:#f1f5f9; padding:8px 12px; border-radius:6px; font-size:0.78rem; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
+                    <div>• <strong>Xe vận chuyển:</strong> <span id="manifest-truck-plate">29C-882.91 (Xe 8 Tấn Tuyến Hà Nội - Phía Bắc)</span></div>
+                    <div id="manifest-scope-notice" style="color:#0369a1; font-weight:600;">Đang xem toàn bộ các kệ thuộc Hub</div>
+                </div>
+
+                <!-- Package Table -->
+                <div style="max-height:220px; overflow-y:auto; border:1px solid #e2e8f0; border-radius:6px; margin-bottom:12px;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.76rem;">
+                        <thead style="position:sticky; top:0; z-index:2;">
+                            <tr style="background:#0f172a; color:#ffffff; text-align:left;">
+                                <th style="padding:6px 10px;">STT</th>
+                                <th style="padding:6px 10px;">Mã Vận Đơn (Code128)</th>
+                                <th style="padding:6px 10px;">Tỉnh Thành Đích</th>
+                                <th style="padding:6px 10px;">Kệ Lưu Trữ</th>
+                                <th style="padding:6px 10px;">Cụm Hub</th>
+                                <th style="padding:6px 10px;">Khối Lượng</th>
+                            </tr>
+                        </thead>
+                        <tbody id="manifest-table-body">
+                            <tr><td colspan="6" style="text-align:center; padding:18px; color:#94a3b8;">Đang tải danh sách kiện hàng trên kệ...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Signatures -->
+                <div style="display:flex; justify-content:space-between; margin-top:12px; padding-top:10px; border-top:1px dashed #cbd5e1; text-align:center; font-size:0.78rem;">
+                    <div style="width:40%;">
+                        <strong>ĐIỀU ĐỘ VIÊN / THỦ KHO</strong><br>
+                        <span style="font-size:0.68rem; color:#64748b;">(Ký và ghi rõ họ tên)</span>
+                        <div style="height:36px;"></div>
+                        <strong>Quản Trị Viên SCADA</strong>
+                    </div>
+                    <div style="width:40%;">
+                        <strong>TÀI XẾ XE TẢI NHẬN HÀNG</strong><br>
+                        <span style="font-size:0.68rem; color:#64748b;">(Ký và ghi rõ họ tên)</span>
+                        <div style="height:36px;"></div>
+                        <strong id="manifest-driver-sign">Tài Xế Tuyến Liên Tỉnh</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div style="background:#f8fafc; border-top:1px solid #e2e8f0; padding:10px 18px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                <div style="display:flex; gap:8px;">
+                    <button id="btn-manifest-print" style="background:#0284c7; color:#ffffff; border:none; padding:7px 14px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;"><i class="fa-solid fa-print"></i> In Phiếu (Print PDF)</button>
+                    <button id="btn-manifest-excel" style="background:#10b981; color:#ffffff; border:none; padding:7px 14px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;"><i class="fa-solid fa-file-excel"></i> Xuất Hóa Đơn Excel (.xls)</button>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button id="btn-manifest-confirm-dispatch" style="background:#059669; color:#ffffff; border:none; padding:7px 16px; border-radius:6px; font-weight:700; font-size:0.8rem; cursor:pointer;"><i class="fa-solid fa-truck-ramp-box"></i> Xác Nhận Xuất Hàng</button>
+                    <button id="btn-manifest-close-footer" style="background:#f1f5f9; border:1px solid #cbd5e1; color:#334155; padding:7px 14px; border-radius:6px; font-weight:600; font-size:0.8rem; cursor:pointer;">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thư viện Three.js r128 chuẩn & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <!-- Nạp 2 lớp Engine tách bạch -->
+    <script src="/static/js/sim_engine_3d.js?v=20261114_v4"></script>
+    <script src="/static/js/sim_render_3d.js?v=20261114_v4"></script>
+
+    <!-- Khởi chạy và gắn sự kiện UI -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Kiểm tra hỗ trợ WebGL
+            try {
+                const canvas = document.createElement("canvas");
+                const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+                if (!gl) throw new Error("WebGL không được hỗ trợ");
+            } catch (err) {
+                document.body.innerHTML = `
+                    <div style="padding: 3rem; text-align: center; color: #dc2626;">
+                        <h2>Trình duyệt của bạn không hỗ trợ WebGL!</h2>
+                        <p>Vui lòng bật tăng tốc phần cứng (Hardware Acceleration) trong cài đặt trình duyệt để xem mô phỏng 3D.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // =========================================================================
+            // HỆ THỐNG TOAST THÔNG BÁO TỨC THỜI (TOAST POPUPS)
+            // =========================================================================
+            const toastContainer = document.getElementById("toast-container");
+            function showToast(message, type = "info") {
+                if (!toastContainer) return;
+                const toast = document.createElement("div");
+                toast.className = `toast-msg toast-${type}`;
+                
+                const icons = {
+                    "success": '<i class="fa-solid fa-circle-check" style="color:#10b981;"></i>',
+                    "warning": '<i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;"></i>',
+                    "error":   '<i class="fa-solid fa-circle-xmark" style="color:#ef4444;"></i>',
+                    "info":    '<i class="fa-solid fa-circle-info" style="color:#38bdf8;"></i>'
+                };
+                
+                toast.innerHTML = `${icons[type] || icons.info} <span>${message}</span>`;
+                toastContainer.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.transition = "all 0.3s ease";
+                    toast.style.opacity = "0";
+                    toast.style.transform = "translateX(50px)";
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
+            }
+
+            // 1. Khởi tạo 2 lớp Engine
+            const logicEngine = new window.SimulationLogicEngine();
+            const renderer3D = new window.SimulationRenderer3D("canvas-3d-wrapper", logicEngine);
+
+            // =========================================================================
+            // GẮN SỰ KIỆN CÁC NÚT BẤM TRÊN THANH CÔNG CỤ CHÍNH
+            // =========================================================================
+            // Tạo kiện hàng
+            const btnSpawn = document.getElementById("btn-spawn");
+            if (btnSpawn) {
+                btnSpawn.addEventListener("click", () => {
+                    if (logicEngine.isEStop) {
+                        showToast("Hệ thống đang E-STOP! Không thể tạo kiện hàng.", "error");
+                        return;
+                    }
+                    logicEngine.spawnPackage();
+                    showToast("Đã đưa 1 kiện hàng mới lên băng chuyền!", "info");
+                });
+            }
+
+            // Bật/tắt tự động sinh
+            const btnAuto = document.getElementById("btn-auto-spawn");
+            if (btnAuto) {
+                btnAuto.addEventListener("click", () => {
+                    logicEngine.autoSpawn = !logicEngine.autoSpawn;
+                    btnAuto.classList.toggle("active", logicEngine.autoSpawn);
+                    btnAuto.innerHTML = `<i class="fa-solid fa-repeat"></i> Tự Động: ${logicEngine.autoSpawn ? 'BẬT' : 'TẮT'}`;
+                    logicEngine.logEvent(`Tự động sinh kiện hàng: ${logicEngine.autoSpawn ? 'BẬT' : 'TẮT'}`, "INFO");
+                    showToast(`Tự động sinh kiện: ${logicEngine.autoSpawn ? 'ĐANG BẬT' : 'ĐÃ TẮT'}`, "info");
+                });
+            }
+
+            // Chế độ linh hoạt
+            const btnFlex = document.getElementById("btn-flexible");
+            if (btnFlex) {
+                btnFlex.addEventListener("click", () => {
+                    logicEngine.flexibleMode = !logicEngine.flexibleMode;
+                    btnFlex.classList.toggle("active", logicEngine.flexibleMode);
+                    btnFlex.innerHTML = `<i class="fa-solid fa-shuffle"></i> Linh Hoạt: ${logicEngine.flexibleMode ? 'BẬT' : 'TẮT'}`;
+                    logicEngine.logEvent(`Chế độ phân bổ linh hoạt AMR: ${logicEngine.flexibleMode ? 'BẬT' : 'TẮT'}`, "INFO");
+                    showToast(`Chế độ linh hoạt: ${logicEngine.flexibleMode ? 'BẬT' : 'TẮT'}`, "info");
+                });
+            }
+
+            // Xóa toàn bộ vật cản
+            const btnClearObs = document.getElementById("btn-clear-obs");
+            if (btnClearObs) {
+                btnClearObs.addEventListener("click", () => {
+                    logicEngine.clearAllObstacles();
+                    showToast("Đã dọn sạch toàn bộ vật cản trên sàn kho!", "success");
+                });
+            }
+
+            // Test che khuất
+            const btnTestOcc = document.getElementById("btn-test-occlusion");
+            if (btnTestOcc) {
+                btnTestOcc.addEventListener("click", () => {
+                    logicEngine.triggerOcclusionTest();
+                    showToast("Đã kích hoạt thử nghiệm che khuất camera AI!", "warning");
+                });
+            }
+
+            // =========================================================================
+            // T2: XỬ LÝ MÔ PHỎNG SỰ CỐ CỔNG CÓ NGUYÊN NHÂN CỤ THỂ
+            // =========================================================================
+            const faultModal = document.getElementById("fault-modal");
+            const btnOpenFault = document.getElementById("btn-simulate-fault");
+            const btnCloseFault = document.getElementById("modal-close-fault");
+            const btnCancelFault = document.getElementById("btn-cancel-fault");
+            const btnConfirmFault = document.getElementById("btn-confirm-fault");
+            const selectFaultGate = document.getElementById("fault-select-gate");
+            const selectFaultCause = document.getElementById("fault-select-cause");
+
+            if (btnOpenFault) {
+                btnOpenFault.addEventListener("click", () => {
+                    if (logicEngine.isEStop) {
+                        showToast("Hệ thống đang E-STOP! Hãy nhả E-STOP trước khi test sự cố.", "error");
+                        return;
+                    }
+                    if (faultModal) faultModal.style.display = "flex";
+                });
+            }
+
+            const closeFaultModal = () => { if (faultModal) faultModal.style.display = "none"; };
+            if (btnCloseFault) btnCloseFault.addEventListener("click", closeFaultModal);
+            if (btnCancelFault) btnCancelFault.addEventListener("click", closeFaultModal);
+
+            if (btnConfirmFault) {
+                btnConfirmFault.addEventListener("click", () => {
+                    const gateId = parseInt(selectFaultGate ? selectFaultGate.value : "1", 10);
+                    const causeType = selectFaultCause ? selectFaultCause.value : "OVERLOAD";
+
+                    // Kiểm tra điều kiện: chỉ kích hoạt khi có kiện đang ở cổng
+                    const hasPkg = logicEngine.hasPackageAtGate(gateId);
+                    if (!hasPkg) {
+                        showToast(`Không có kiện hàng nào tại Cổng ${gateId}! Hãy chờ kiện tới cổng để thử nghiệm.`, "warning");
+                        return;
+                    }
+
+                    // Kích hoạt sự cố
+                    const res = logicEngine.triggerGateFault(gateId, causeType);
+                    if (res && res.success) {
+                        showToast(res.message, "error");
+                        closeFaultModal();
+                    } else {
+                        showToast(res ? res.message : "Không thể kích hoạt sự cố", "warning");
+                    }
+                });
+            }
+
+            // =========================================================================
+            // T3: XỬ LÝ CÁC NÚT MANUAL OVERRIDE (SCADA)
+            // =========================================================================
+            // 3.1. E-STOP Toàn Bộ Kho
+            const btnEstop = document.getElementById("btn-estop-warehouse");
+            const estopOverlay = document.getElementById("estop-overlay");
+            const estopBtnText = document.getElementById("estop-btn-text");
+
+            function updateEstopUI(isEstop) {
+                if (estopOverlay) estopOverlay.style.display = isEstop ? "block" : "none";
+                if (btnEstop) {
+                    btnEstop.classList.toggle("active-estop", isEstop);
+                    if (estopBtnText) {
+                        estopBtnText.textContent = isEstop ? "NHẢ E-STOP (BÌNH THƯỜNG)" : "E-STOP Toàn Kho";
+                    }
+                }
+
+                // Khóa/mở các nút thao tác khác
+                const lockableBtns = [btnSpawn, btnAuto, btnFlex, btnClearObs, btnOpenFault, btnTestOcc];
+                lockableBtns.forEach(btn => {
+                    if (btn) btn.disabled = isEstop;
+                });
+            }
+
+            if (btnEstop) {
+                btnEstop.addEventListener("click", () => {
+                    const isEstop = logicEngine.toggleEStop();
+                    updateEstopUI(isEstop);
+                    if (isEstop) {
+                        showToast("🛑 ĐÃ KÍCH HOẠT DỪNG KHẨN CẤP (E-STOP) TOÀN BỘ KHO!", "error");
+                    } else {
+                        showToast("✅ Đã nhả dừng khẩn cấp. Hệ thống khôi phục vận hành!", "success");
+                    }
+                });
+            }
+
+            // 3.2. Gỡ Kẹt Băng Tải (Đảo Chiều 2s)
+            const btnUnjam = document.getElementById("btn-unjam-conveyor");
+            if (btnUnjam) {
+                btnUnjam.addEventListener("click", () => {
+                    if (logicEngine.isEStop) {
+                        showToast("Hệ thống đang E-STOP! Nhả E-STOP trước khi gỡ kẹt.", "error");
+                        return;
+                    }
+                    const res = logicEngine.reverseConveyorToUnjam();
+                    if (res.success) {
+                        showToast(res.message, "warning");
+                        btnUnjam.disabled = true;
+                        setTimeout(() => {
+                            btnUnjam.disabled = false;
+                        }, 2500);
+                    } else {
+                        showToast(res.message, "info");
+                    }
+                });
+            }
+
+            // 3.3. Force Cổng Phân Loại (Cổng 1, 2, 3)
+            [1, 2, 3].forEach(gid => {
+                const btnForce = document.getElementById(`btn-force-gate-${gid}`);
+                if (btnForce) {
+                    btnForce.addEventListener("click", () => {
+                        if (logicEngine.isEStop) {
+                            showToast("Hệ thống đang E-STOP!", "error");
+                            return;
+                        }
+                        const res = logicEngine.forceGateDivert(gid);
+                        if (res.success) {
+                            showToast(res.message, "success");
+                        } else {
+                            showToast(res.message, "warning");
+                        }
+                    });
+                }
+            });
+
+            // 3.4. Điều AMR-01 Về Trạm Sạc
+            const btnChargeAmr01 = document.getElementById("btn-charge-amr01");
+            if (btnChargeAmr01) {
+                btnChargeAmr01.addEventListener("click", () => {
+                    if (logicEngine.isEStop) {
+                        showToast("AMR-01 đang bị khóa bởi E-STOP toàn kho!", "error");
+                        return;
+                    }
+                    const res = logicEngine.sendAmrToCharge("AMR-01");
+                    if (res.success) {
+                        showToast(res.message, "success");
+                    } else {
+                        showToast(res.message, "warning");
+                    }
+                });
+            }
+
+            // 3.5. Khôi Phục AMR
+            const btnRecoverAll = document.getElementById("btn-recover-all-amr");
+            if (btnRecoverAll) {
+                btnRecoverAll.addEventListener("click", () => {
+                    const res = logicEngine.recoverAMR();
+                    if (res.recovered > 0) {
+                        showToast(`Đã khôi phục thành công ${res.recovered} xe AMR về trạng thái hoạt động!`, "success");
+                    } else {
+                        showToast("Tất cả xe AMR đều đang ở trạng thái bình thường hoặc đang sạc pin.", "info");
+                    }
+                });
+            }
+
+            // ==========================================================================
+            // CÒI BÁO ĐỘNG SỰ CỐ KẸT HÀNG & VẬT CẢN (WEB AUDIO SYNTHESIZER)
+            // ==========================================================================
+            const SoundAlarm = {
+                ctx: null,
+                osc: null,
+                gain: null,
+                interval: null,
+                isMuted: false,
+                isPlaying: false,
+
+                init() {
+                    if (!this.ctx) {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContext) {
+                            this.ctx = new AudioContext();
+                        }
+                    }
+                },
+
+                start() {
+                    if (this.isMuted || this.isPlaying) return;
+                    try {
+                        this.init();
+                        if (!this.ctx) return;
+                        if (this.ctx.state === 'suspended') {
+                            this.ctx.resume();
+                        }
+
+                        this.osc = this.ctx.createOscillator();
+                        this.gain = this.ctx.createGain();
+
+                        this.osc.type = 'sawtooth';
+                        this.osc.frequency.setValueAtTime(850, this.ctx.currentTime);
+                        this.gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+                        this.osc.connect(this.gain);
+                        this.gain.connect(this.ctx.destination);
+                        this.osc.start();
+                        this.isPlaying = true;
+
+                        let toggle = false;
+                        this.interval = setInterval(() => {
+                            if (!this.osc || !this.ctx) return;
+                            const targetFreq = toggle ? 850 : 560;
+                            this.osc.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.06);
+                            toggle = !toggle;
+                        }, 320);
+                    } catch (e) {
+                        console.warn("Lỗi khởi tạo âm thanh Web Audio:", e);
+                    }
+                },
+
+                stop() {
+                    if (!this.isPlaying) return;
+                    try {
+                        if (this.interval) {
+                            clearInterval(this.interval);
+                            this.interval = null;
+                        }
+                        if (this.osc) {
+                            this.osc.stop();
+                            this.osc.disconnect();
+                            this.osc = null;
+                        }
+                        if (this.gain) {
+                            this.gain.disconnect();
+                            this.gain = null;
+                        }
+                    } catch (e) {
+                        console.warn("Lỗi dừng còi báo:", e);
+                    } finally {
+                        this.isPlaying = false;
+                    }
+                },
+
+                toggleMute() {
+                    this.isMuted = !this.isMuted;
+                    if (this.isMuted && this.isPlaying) {
+                        this.stop();
+                    }
+                    return this.isMuted;
+                }
+            };
+
+            // Bật/tắt còi báo
+            const btnSiren = document.getElementById("btn-siren");
+            if (btnSiren) {
+                btnSiren.addEventListener("click", () => {
+                    const isMuted = SoundAlarm.toggleMute();
+                    logicEngine.sirenMuted = isMuted;
+                    btnSiren.classList.toggle("active", !isMuted);
+                    btnSiren.innerHTML = `<i class="fa-solid fa-volume-${isMuted ? 'xmark' : 'high'}"></i> Còi: ${isMuted ? 'TẮT' : 'BẬT'}`;
+                    logicEngine.logEvent(`Còi báo động âm thanh: ${isMuted ? 'TẮT' : 'BẬT'}`, "INFO");
+                    showToast(`Còi báo động: ${isMuted ? 'ĐÃ TẮT' : 'ĐANG BẬT'}`, "info");
+                });
+            }
+
+            // Điều chỉnh tốc độ 1x / 2x / 4x
+            const speedBtns = document.querySelectorAll(".btn-speed");
+            speedBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    speedBtns.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    const spd = parseFloat(btn.dataset.speed);
+                    logicEngine.speedMultiplier = spd;
+                    logicEngine.logEvent(`Tốc độ mô phỏng chuyển sang: ${spd}x`, "INFO");
+                    showToast(`Tốc độ mô phỏng: ${spd}x`, "info");
+                });
+            });
+
+            // Xuất JSON
+            const btnExportJson = document.getElementById("btn-export-json");
+            if (btnExportJson) {
+                btnExportJson.addEventListener("click", () => {
+                    const jsonStr = logicEngine.exportStateJSON();
+                    const blob = new Blob([jsonStr], { type: "application/json" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `nexuslog_simulation_state_${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    logicEngine.logEvent("Đã xuất trạng thái hệ thống dạng JSON", "INFO");
+                    showToast("Đã tải xuống file trạng thái JSON!", "success");
+                });
+            }
+
+            // Điều khiển góc quay Camera
+            const camIso = document.getElementById("cam-iso");
+            const camTop = document.getElementById("cam-top");
+            const camFollow = document.getElementById("cam-follow");
+            const camPills = [camIso, camTop, camFollow].filter(Boolean);
+
+            function setCam(btn, mode) {
+                camPills.forEach(p => p && p.classList.remove("active"));
+                if (btn) btn.classList.add("active");
+                renderer3D.setCameraPreset(mode);
+            }
+
+            if (camIso) camIso.addEventListener("click", () => setCam(camIso, "iso"));
+            if (camTop) camTop.addEventListener("click", () => setCam(camTop, "top"));
+            if (camFollow) camFollow.addEventListener("click", () => setCam(camFollow, "follow"));
+
+            // Về góc nhìn mặc định chuẩn
+            const camReset = document.getElementById("cam-reset");
+            if (camReset) {
+                camReset.addEventListener("click", () => {
+                    setCam(camIso, "iso");
+                });
+            }
+
+            // Bật / tắt Toàn màn hình
+            const camFs = document.getElementById("cam-fullscreen");
+            if (camFs) {
+                camFs.addEventListener("click", () => {
+                    if (!document.fullscreenElement) {
+                        document.documentElement.requestFullscreen().catch(() => {});
+                        camFs.innerHTML = '<i class="fa-solid fa-compress"></i> Thu Nhỏ';
+                    } else {
+                        document.exitFullscreen().catch(() => {});
+                        camFs.innerHTML = '<i class="fa-solid fa-expand"></i> Toàn Màn Hình';
+                    }
+                });
+            }
+
+            // Theo dõi cảnh báo kẹt cổng và vật cản chặn đường để hú còi báo động thực tế
+            setInterval(() => {
+                const toast = document.getElementById("no-path-toast");
+                const hasNoPath = logicEngine.amrs.some(a => a.noPathAlert);
+                const hasJam = logicEngine.gates.some(g => g.isJammed);
+
+                if (toast) toast.style.display = hasNoPath ? "flex" : "none";
+
+                // Hú còi báo động công nghiệp nếu có sự cố kẹt cổng HOẶC robot bị vật cản chặn đường
+                if ((hasJam || hasNoPath) && !logicEngine.sirenMuted) {
+                    SoundAlarm.start();
+                } else {
+                    SoundAlarm.stop();
+                }
+
+                // Theo dõi gợi ý khi tự động tắt & robot rảnh
+                const guide = document.getElementById("idle-guide-banner");
+                if (guide) {
+                    const isIdle = !logicEngine.autoSpawn && logicEngine.amrs.every(a => a.state === "IDLE") && logicEngine.packages.length === 0;
+                    guide.style.display = isIdle ? "flex" : "none";
+                }
+            }, 250);
+
+            // =========================================================================
+            // XỬ LÝ MODAL PHIẾU XUẤT HÀNG & BÀN GIAO VẬN CHUYỂN (OUTBOUND MANIFEST)
+            // =========================================================================
+            const dispatchModal = document.getElementById("dispatch-manifest-modal");
+            const btnOpenDispatch = document.getElementById("btn-dispatch-truck");
+            const btnCloseDispatch = document.getElementById("modal-close-manifest");
+            const btnCloseFooter = document.getElementById("btn-manifest-close-footer");
+            const hubRadios = document.querySelectorAll('input[name="manifest-hub"]');
+            const selectRack = document.getElementById("manifest-select-rack");
+            const selectProvince = document.getElementById("manifest-select-province");
+            const tbodyManifest = document.getElementById("manifest-table-body");
+            const badgeManifestId = document.getElementById("manifest-id-badge");
+            const lblPkgCount = document.getElementById("manifest-pkg-count");
+            const lblTotalWeight = document.getElementById("manifest-total-weight");
+            const lblTruckPlate = document.getElementById("manifest-truck-plate");
+            const lblScopeNotice = document.getElementById("manifest-scope-notice");
+            const btnPrintManifest = document.getElementById("btn-manifest-print");
+            const btnExcelManifest = document.getElementById("btn-manifest-excel");
+            const btnConfirmDispatch = document.getElementById("btn-manifest-confirm-dispatch");
+
+            function getSelectedHub() {
+                const checked = document.querySelector('input[name="manifest-hub"]:checked');
+                return checked ? checked.value : "Bắc";
+            }
+
+            function populateFiltersForHub() {
+                const hub = getSelectedHub();
+                const racks = (logicEngine.config.CLUSTER_RACKS || []).filter(r => r.region === hub);
+                const provinces = (logicEngine.config.PROVINCES || []).filter(p => p.region === hub);
+
+                if (selectRack) {
+                    selectRack.innerHTML = `<option value="ALL">-- Tất cả 10 kệ của Hub ${hub} --</option>` + 
+                        racks.map(r => `<option value="${r.id}">Kệ: ${r.shortName || r.name}</option>`).join("");
+                }
+
+                if (selectProvince) {
+                    selectProvince.innerHTML = `<option value="ALL">-- Tất cả tỉnh của Hub ${hub} --</option>` + 
+                        provinces.map(p => {
+                            const r = logicEngine.racks[p.rackId];
+                            let cnt = 0;
+                            if (r && r.items) {
+                                cnt = r.items.filter(item => (typeof item === 'object' ? item.province : '') === p.name).length;
+                            }
+                            return `<option value="${p.name}">${p.name} (${cnt} kiện)</option>`;
+                        }).join("");
+                }
+            }
+
+            function renderManifestTable() {
+                const hub = getSelectedHub();
+                const selRackId = selectRack ? selectRack.value : "ALL";
+                const selProv = selectProvince ? selectProvince.value : "ALL";
+
+                let targetRacks = (logicEngine.config.CLUSTER_RACKS || []).filter(r => r.region === hub);
+                if (selRackId !== "ALL") {
+                    targetRacks = targetRacks.filter(r => r.id === selRackId);
+                }
+
+                const plates = {
+                    "Bắc": "29C-882.91 (Xe 8 Tấn Tuyến Hà Nội - Phía Bắc)",
+                    "Trung": "43C-612.45 (Xe 10 Tấn Tuyến Đà Nẵng - Miền Trung)",
+                    "Nam": "51C-993.18 (Xe 15 Tấn Tuyến TP.HCM - Miền Tây)"
+                };
+                if (lblTruckPlate) lblTruckPlate.textContent = plates[hub] || "29C-882.91";
+                if (badgeManifestId) badgeManifestId.textContent = `PXK-${Date.now().toString().slice(-6)}-${hub === 'Bắc' ? 'BAC' : (hub === 'Trung' ? 'TRUNG' : 'NAM')}`;
+
+                let allItems = [];
+                let totalWeightNum = 0.0;
+
+                targetRacks.forEach(cr => {
+                    const r = logicEngine.racks[cr.id];
+                    if (r && r.count > 0 && r.items) {
+                        r.items.forEach(pkg => {
+                            const pkgId = typeof pkg === 'object' ? pkg.id : pkg;
+                            const barcode = typeof pkg === 'object' ? pkg.barcode : `VN-${cr.shortName || 'LOG'}-${String(pkgId).padStart(6, '0')}`;
+                            const provinceName = typeof pkg === 'object' ? pkg.province : cr.name;
+                            
+                            if (selProv !== "ALL" && provinceName !== selProv) return;
+
+                            const w = (1.5 + (pkgId % 7) * 0.4).toFixed(1);
+                            totalWeightNum += parseFloat(w);
+
+                            allItems.push({
+                                id: pkgId,
+                                barcode: barcode,
+                                province: provinceName,
+                                rackName: cr.shortName || cr.name,
+                                region: cr.region,
+                                weight: w + " kg"
+                            });
+                        });
+                    }
+                });
+
+                if (lblPkgCount) lblPkgCount.textContent = `${allItems.length} kiện hàng sẵn sàng`;
+                if (lblTotalWeight) lblTotalWeight.textContent = `${totalWeightNum.toFixed(1)} kg`;
+
+                if (lblScopeNotice) {
+                    if (selProv !== "ALL") {
+                        lblScopeNotice.innerHTML = `Đang lọc riêng đơn hàng cho <strong>Tỉnh ${selProv}</strong>`;
+                    } else if (selRackId !== "ALL") {
+                        const rObj = targetRacks[0];
+                        lblScopeNotice.innerHTML = `Đang lọc theo <strong>Kệ ${rObj ? rObj.name : selRackId}</strong>`;
+                    } else {
+                        lblScopeNotice.innerHTML = `Đang xem toàn bộ các kệ thuộc <strong>Hub Miền ${hub}</strong>`;
+                    }
+                }
+
+                if (btnConfirmDispatch) {
+                    const scopeStr = selProv !== "ALL" ? `Tỉnh ${selProv}` : (selRackId !== "ALL" ? `Kệ này` : `Hub ${hub}`);
+                    btnConfirmDispatch.innerHTML = `<i class="fa-solid fa-truck-ramp-box"></i> Xác Nhận Xuất ${scopeStr} (${allItems.length} kiện)`;
+                    btnConfirmDispatch.disabled = (allItems.length === 0);
+                    btnConfirmDispatch.style.opacity = allItems.length === 0 ? "0.6" : "1";
+                }
+
+                if (!tbodyManifest) return;
+                if (allItems.length === 0) {
+                    tbodyManifest.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:22px; color:#64748b; font-style:italic;">Hiện chưa có kiện hàng nào phù hợp với bộ lọc đã chọn. Hãy spawn thêm kiện và chờ robot AMR xếp vào kệ!</td></tr>`;
+                } else {
+                    tbodyManifest.innerHTML = allItems.map((item, idx) => `
+                        <tr style="border-bottom:1px solid #f1f5f9;">
+                            <td style="padding:7px 10px; font-weight:600; color:#64748b;">${idx + 1}</td>
+                            <td style="padding:7px 10px; font-family:'JetBrains Mono', monospace; font-weight:700; color:#0284c7;">${item.barcode}</td>
+                            <td style="padding:7px 10px; font-weight:700; color:#0f172a;">${item.province}</td>
+                            <td style="padding:7px 10px; color:#475569; font-size:0.75rem;">${item.rackName}</td>
+                            <td style="padding:7px 10px;"><span style="background:#eff6ff; color:#1d4ed8; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:700;">Hub ${item.region}</span></td>
+                            <td style="padding:7px 10px; font-family:'JetBrains Mono', monospace; font-weight:600;">${item.weight}</td>
+                        </tr>
+                    `).join("");
+                }
+            }
+
+            if (btnOpenDispatch) {
+                btnOpenDispatch.addEventListener("click", () => {
+                    populateFiltersForHub();
+                    renderManifestTable();
+                    if (dispatchModal) dispatchModal.style.display = "flex";
+                });
+            }
+
+            const closeManifestModal = () => { if (dispatchModal) dispatchModal.style.display = "none"; };
+            if (btnCloseDispatch) btnCloseDispatch.addEventListener("click", closeManifestModal);
+            if (btnCloseFooter) btnCloseFooter.addEventListener("click", closeManifestModal);
+
+            hubRadios.forEach(r => r.addEventListener("change", () => {
+                populateFiltersForHub();
+                renderManifestTable();
+            }));
+
+            if (selectRack) {
+                selectRack.addEventListener("change", () => {
+                    if (selectProvince) selectProvince.value = "ALL";
+                    renderManifestTable();
+                });
+            }
+
+            if (selectProvince) {
+                selectProvince.addEventListener("change", () => {
+                    const selProv = selectProvince.value;
+                    if (selProv !== "ALL" && selectRack) {
+                        const pObj = (logicEngine.config.PROVINCES || []).find(p => p.name === selProv);
+                        if (pObj && pObj.rackId) selectRack.value = pObj.rackId;
+                    }
+                    renderManifestTable();
+                });
+            }
+
+            // NẠP ĐƠN MẪU ĐỂ TEST XUẤT HÓA ĐƠN & IN ẤN NGAY LẬP TỨC
+            const btnSampleData = document.getElementById("btn-manifest-sample-data");
+            if (btnSampleData) {
+                btnSampleData.addEventListener("click", () => {
+                    const hub = getSelectedHub();
+                    const provsInHub = (logicEngine.config.PROVINCES || []).filter(p => p.region === hub);
+
+                    let added = 0;
+                    provsInHub.forEach((p, idx) => {
+                        if (idx < 8) {
+                            const targetRack = logicEngine.racks[p.rackId];
+                            if (targetRack && targetRack.count < (logicEngine.config.MAX_RACK_CAPACITY || 18)) {
+                                const pkgId = 3000 + logicEngine.totalProcessed + idx + 1;
+                                targetRack.items.push({
+                                    id: pkgId,
+                                    barcode: `VN-${p.code || 'LOG'}-${String(pkgId).padStart(6, '0')}`,
+                                    province: p.name,
+                                    region: p.region
+                                });
+                                targetRack.count++;
+                                added++;
+                            }
+                        }
+                    });
+
+                    populateFiltersForHub();
+                    renderManifestTable();
+                    showToast(`Đã nạp ${added} kiện hàng mẫu lên kệ của Hub ${hub}!`, "success");
+                });
+            }
+
+            // IN PHIẾU XUẤT HÀNG (CỬA SỔ IN A4 CHUYÊN DỤNG)
+            if (btnPrintManifest) {
+                btnPrintManifest.addEventListener("click", () => {
+                    const printArea = document.getElementById("manifest-print-area");
+                    if (!printArea) return;
+
+                    const clone = printArea.cloneNode(true);
+                    const scrollContainer = clone.querySelector('div[style*="overflow-y:auto"]');
+                    if (scrollContainer) {
+                        scrollContainer.style.maxHeight = "none";
+                        scrollContainer.style.overflow = "visible";
+                    }
+
+                    const printWindow = window.open("", "_blank", "width=860,height=920");
+                    printWindow.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <title>Phiếu Xuất Hàng & Bàn Giao Vận Chuyển - NEXUSLOG</title>
+    <meta charset="utf-8">
+    <style>
+        @page { size: A4 portrait; margin: 15mm; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #0f172a; margin: 0; padding: 15px; font-size: 13px; line-height: 1.5; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 15px; }
+        th { background-color: #0f172a !important; color: #ffffff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; text-align: left; padding: 7px 10px; font-size: 12px; }
+        td { padding: 7px 10px; border-bottom: 1px solid #cbd5e1; font-size: 12px; }
+        tr:nth-child(even) { background-color: #f8fafc; }
+        .text-mono { font-family: 'Courier New', Courier, monospace; font-weight: bold; color: #0284c7; }
+        @media print {
+            body { padding: 0; }
+        }
+    </style>
+</head>
+<body>
+    ${clone.innerHTML}
+    <script>
+        window.onload = function() {
+            window.focus();
+            setTimeout(function() {
+                window.print();
+                window.close();
+            }, 350);
+        };
+    <\/script>
+</body>
+</html>`);
+                    printWindow.document.close();
+                });
+            }
+
+            // XUẤT HÓA ĐƠN EXCEL BẢNG BIỂU CHUYÊN NGHIỆP (.XLS)
+            if (btnExcelManifest) {
+                btnExcelManifest.addEventListener("click", () => {
+                    const hub = getSelectedHub();
+                    const selProv = selectProvince ? selectProvince.value : "ALL";
+                    const selRackId = selectRack ? selectRack.value : "ALL";
+                    const manifestId = badgeManifestId ? badgeManifestId.textContent : `PXK-${Date.now().toString().slice(-6)}`;
+                    const truckPlate = lblTruckPlate ? lblTruckPlate.textContent : "29C-882.91";
+                    const nowStr = new Date().toLocaleString("vi-VN");
+
+                    const trs = tbodyManifest.querySelectorAll("tr");
+                    let rowsHtml = "";
+                    let totalCount = 0;
+                    let totalWeight = 0.0;
+
+                    trs.forEach(tr => {
+                        const tds = tr.querySelectorAll("td");
+                        if (tds.length === 6) {
+                            totalCount++;
+                            const wVal = parseFloat(tds[5].textContent) || 0;
+                            totalWeight += wVal;
+                            rowsHtml += `<tr>
+                                <td style="text-align:center; border:1px solid #94a3b8; padding:6px;">${tds[0].textContent}</td>
+                                <td style="font-family:'Courier New', monospace; font-weight:bold; color:#0369a1; border:1px solid #94a3b8; padding:6px;">${tds[1].textContent}</td>
+                                <td style="font-weight:bold; border:1px solid #94a3b8; padding:6px;">${tds[2].textContent}</td>
+                                <td style="border:1px solid #94a3b8; padding:6px;">${tds[3].textContent}</td>
+                                <td style="text-align:center; border:1px solid #94a3b8; padding:6px;">${tds[4].textContent}</td>
+                                <td style="text-align:right; border:1px solid #94a3b8; padding:6px;">${tds[5].textContent}</td>
+                            </tr>`;
+                        }
+                    });
+
+                    if (totalCount === 0) {
+                        showToast("Kệ hiện chưa có kiện hàng nào để xuất Excel! Hãy bấm 'Nạp Đơn Mẫu'.", "warning");
+                        return;
+                    }
+
+                    const scopeStr = selProv !== "ALL" ? `Tỉnh ${selProv}` : (selRackId !== "ALL" ? `Kệ ${selRackId}` : `Toàn Tuyến Hub ${hub}`);
+
+                    const excelHtml = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <!--[if gte mso 9]>
+    <xml>
+    <x:ExcelWorkbook>
+        <x:ExcelWorksheets>
+            <x:ExcelWorksheet>
+                <x:Name>Hoa_Don_Xuat_Kho</x:Name>
+                <x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions>
+            </x:ExcelWorksheet>
+        </x:ExcelWorksheets>
+    </x:ExcelWorkbook>
+    </xml>
+    <![endif]-->
+    <style>
+        body { font-family: 'Arial', sans-serif; font-size: 11pt; color: #0f172a; }
+        .title { font-size: 16pt; font-weight: bold; color: #1e3a8a; text-align: center; }
+        .subtitle { font-size: 11pt; color: #475569; text-align: center; font-style: italic; }
+        th { background-color: #0f172a; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #000000; padding: 8px; }
+        td { border: 1px solid #94a3b8; padding: 6px; }
+        .meta-title { font-weight: bold; color: #334155; }
+        .total-row { background-color: #f1f5f9; font-weight: bold; }
+        .sig-box { font-weight: bold; text-align: center; }
+        .sig-sub { font-size: 9pt; color: #64748b; font-style: italic; }
+    </style>
+</head>
+<body>
+    <table>
+        <tr><td colspan="6" style="font-size:13pt; font-weight:bold; color:#0f172a;">TỔNG KHO TRUNG CHUYỂN BƯU CHÍNH THÔNG MINH NEXUSLOG</td></tr>
+        <tr><td colspan="6" style="font-size:10pt; color:#64748b;">Hệ thống Digital Twin SCADA Realtime — Phân loại tự động YOLOv12 & Robot AMR</td></tr>
+        <tr><td colspan="6"></td></tr>
+        <tr><td colspan="6" class="title">HÓA ĐƠN KIÊM BIÊN BẢN BÀN GIAO VẬN CHUYỂN XUẤT KHO</td></tr>
+        <tr><td colspan="6" class="subtitle">(OUTBOUND FREIGHT DISPATCH INVOICE)</td></tr>
+        <tr><td colspan="6"></td></tr>
+        <tr>
+            <td colspan="3"><span class="meta-title">Mã chứng từ:</span> ${manifestId}</td>
+            <td colspan="3"><span class="meta-title">Thời gian lập:</span> ${nowStr}</td>
+        </tr>
+        <tr>
+            <td colspan="3"><span class="meta-title">Tuyến vận chuyển:</span> Hub Miền ${hub}</td>
+            <td colspan="3"><span class="meta-title">Xe tiếp nhận:</span> ${truckPlate}</td>
+        </tr>
+        <tr>
+            <td colspan="3"><span class="meta-title">Phạm vi xuất:</span> ${scopeStr}</td>
+            <td colspan="3"><span class="meta-title">Cửa xuất (Dock):</span> Cửa số 1 — Khu vực xuất hàng liên tỉnh</td>
+        </tr>
+        <tr><td colspan="6"></td></tr>
+        <tr style="height:28px;">
+            <th style="width:50px;">STT</th>
+            <th style="width:180px;">Mã Vận Đơn (Code128)</th>
+            <th style="width:160px;">Tỉnh Thành Đích</th>
+            <th style="width:180px;">Kệ Gom Lưu Trữ</th>
+            <th style="width:110px;">Cụm Hub</th>
+            <th style="width:110px;">Khối Lượng</th>
+        </tr>
+        ${rowsHtml}
+        <tr class="total-row" style="height:26px;">
+            <td colspan="3" style="text-align:center; font-weight:bold; border:1px solid #94a3b8;">TỔNG CỘNG ĐƠN HÀNG XUẤT:</td>
+            <td style="text-align:center; font-weight:bold; border:1px solid #94a3b8;">${totalCount} KIỆN HÀNG</td>
+            <td style="text-align:center; font-weight:bold; border:1px solid #94a3b8;">TỔNG CÂN:</td>
+            <td style="text-align:right; font-weight:bold; border:1px solid #94a3b8;">${totalWeight.toFixed(1)} kg</td>
+        </tr>
+        <tr><td colspan="6"></td></tr>
+        <tr><td colspan="6"></td></tr>
+        <tr>
+            <td colspan="2" class="sig-box">NGƯỜI LẬP HÓA ĐƠN<br><span class="sig-sub">(Ký và ghi rõ họ tên)</span></td>
+            <td colspan="2" class="sig-box">THỦ KHO XUẤT HÀNG<br><span class="sig-sub">(Ký và ghi rõ họ tên)</span></td>
+            <td colspan="2" class="sig-box">TÀI XẾ XE TẢI TIẾP NHẬN<br><span class="sig-sub">(Ký và ghi rõ họ tên)</span></td>
+        </tr>
+        <tr style="height:55px;">
+            <td colspan="2" style="vertical-align:bottom; text-align:center; border:none;"><strong>Admin SCADA</strong></td>
+            <td colspan="2" style="vertical-align:bottom; text-align:center; border:none;"><strong>Thủ Kho NexusLog</strong></td>
+            <td colspan="2" style="vertical-align:bottom; text-align:center; border:none;"><strong>Tài Xế Tuyến ${hub}</strong></td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+                    const blob = new Blob([excelHtml], { type: "application/vnd.ms-excel;charset=utf-8;" });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    const fileSuffix = selProv !== "ALL" ? `Tinh_${selProv}` : `Hub_${hub}`;
+                    a.download = `Hoa_Don_Xuat_Kho_${fileSuffix}_${Date.now()}.xls`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                    showToast("Đã xuất file hóa đơn Excel (.xls) thành công!", "success");
+                });
+            }
+
+            if (btnConfirmDispatch) {
+                btnConfirmDispatch.addEventListener("click", () => {
+                    const hub = getSelectedHub();
+                    const selRackId = selectRack ? selectRack.value : "ALL";
+                    const selProv = selectProvince ? selectProvince.value : "ALL";
+
+                    const manifest = logicEngine.dispatchTruck({
+                        region: hub,
+                        rackId: selRackId,
+                        provinceName: selProv
+                    });
+
+                    populateFiltersForHub();
+                    renderManifestTable();
+
+                    const scopeStr = selProv !== "ALL" ? `Tỉnh ${selProv}` : (selRackId !== "ALL" ? `Kệ ${selRackId}` : `Toàn Tuyến Hub ${hub}`);
+                    showToast(`Đã xuất hàng thành công ${manifest.totalPackages} kiện cho xe ${manifest.truckPlate}!`, "success");
+                    closeManifestModal();
+                });
+            }
+
+            // =========================================================================
+            // LẮNG NGHE LỆNH TỪ DASHBOARD CHA (POSTMESSAGE INTERLOCK)
+            // =========================================================================
+            window.addEventListener("message", (event) => {
+                if (!event.data || !event.data.action) return;
+                const action = event.data.action;
+                if (action === "EMERGENCY_STOP_ALL") {
+                    const targetState = event.data.enable !== undefined ? event.data.enable : !logicEngine.isEStop;
+                    if (logicEngine.isEStop !== targetState) {
+                        const isEstop = logicEngine.toggleEStop();
+                        updateEstopUI(isEstop);
+                    }
+                } else if (action === "CONVEYOR_REVERSE") {
+                    const res = logicEngine.reverseConveyorToUnjam();
+                    if (res && res.message) showToast(res.message, res.success ? "warning" : "info");
+                } else if (action === "FORCE_GATE_ACTUATOR") {
+                    const gid = Number(event.data.gate_id || 1);
+                    const res = logicEngine.forceGateDivert(gid);
+                    if (res && res.message) showToast(res.message, res.success ? "success" : "warning");
+                } else if (action === "FORCE_AMR_DOCK") {
+                    const rid = event.data.robot_id || "AMR-01";
+                    const res = logicEngine.sendAmrToCharge(rid);
+                    if (res && res.message) showToast(res.message, res.success ? "success" : "warning");
+                } else if (action === "RESUME_AMR") {
+                    const rid = event.data.robot_id || null;
+                    const res = logicEngine.recoverAMR(rid);
+                    if (res && res.message) showToast(res.message, "success");
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>

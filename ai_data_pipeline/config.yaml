@@ -1,0 +1,185 @@
+# ============================================================
+# config.yaml — Cấu hình toàn bộ pipeline AI Data (Bùi Thị Loan)
+# Dự án: NCKH SV2026-ICTU-08 | ICTU
+# LOG-105: Thiết lập môi trường sinh dữ liệu mô phỏng
+# ============================================================
+
+# --- Thông tin dự án ---
+project:
+  name: "HE_THONG_AI_TRUY_VET_HANG_HOA_KHO_THONG_MINH"
+  jira_prefix: "LOG"
+  author: "Bui Thi Loan"
+  role: "AI Data Specialist"
+
+# --- Cấu hình dataset (khớp Bảng 5.2 báo cáo NCKH) ---
+dataset:
+  total_frames: 2500
+  num_sequences: 50
+  frames_per_sequence: 50
+  image_width: 640
+  image_height: 640
+  image_format: "jpg"
+
+  # Phân chia theo chuỗi video (sequence-level split, chống data leakage)
+  split:
+    train:
+      sequences: [0, 34]   # seq 00–34 → 35 chuỗi × 50 frames = 1750 frames
+      frames: 1750
+    val:
+      sequences: [35, 44]  # seq 35–44 → 10 chuỗi × 50 frames = 500 frames
+      frames: 500
+    test:
+      sequences: [45, 49]  # seq 45–49 → 5 chuỗi  × 50 frames = 250 frames
+      frames: 250
+
+  # Số lượng instance theo lớp (khớp Bảng 5.2 báo cáo)
+  instance_counts:
+    train:
+      package: 5820
+      pallet: 1450
+      vehicle: 1220
+      person: 980
+      total: 9470
+    val:
+      package: 1650
+      pallet: 410
+      vehicle: 350
+      person: 280
+      total: 2690
+    test:
+      package: 840
+      pallet: 210
+      vehicle: 180
+      person: 140
+      total: 1370
+    overall:
+      package: 8310
+      pallet: 2070
+      vehicle: 1750
+      person: 1400
+      total: 13530
+
+# --- Định nghĩa 4 lớp đối tượng ---
+classes:
+  - name: "package"
+    id: 0
+    color_rgb: [255, 100, 0]      # Cam — kiện hàng
+    size_range_w: [30, 80]        # pixel
+    size_range_h: [30, 80]
+    avg_per_frame: 3.33
+  - name: "pallet"
+    id: 1
+    color_rgb: [139, 90, 43]      # Nâu gỗ — pallet
+    size_range_w: [60, 120]
+    size_range_h: [50, 100]
+    avg_per_frame: 0.83
+  - name: "vehicle"
+    id: 2
+    color_rgb: [0, 120, 255]      # Xanh dương — xe AMR/forklift
+    size_range_w: [80, 160]
+    size_range_h: [60, 130]
+    avg_per_frame: 0.70
+  - name: "person"
+    id: 3
+    color_rgb: [0, 200, 80]       # Xanh lá — người
+    size_range_w: [20, 50]
+    size_range_h: [40, 90]
+    avg_per_frame: 0.56
+
+# --- Cấu hình môi trường mô phỏng kho bãi ---
+simulation:
+  warehouse_width: 640
+  warehouse_height: 640
+  background_color_rgb: [220, 220, 220]   # Xám nhạt — nền sàn kho
+  shelf_color_rgb: [150, 150, 150]        # Xám đậm — kệ hàng
+  aisle_width: 80                          # pixel — lối đi giữa kệ
+  num_shelf_rows: 4
+  num_shelf_cols: 6
+  random_seed_base: 42                     # Seed gốc; mỗi sequence = seed_base + seq_id
+
+# --- Cấu hình training (khớp Bảng 5.3) ---
+training:
+  epochs: 100
+  batch_size: 16
+  learning_rate: 0.01
+  weight_decay: 0.0005
+  momentum: 0.937
+  warmup_epochs: 3
+  image_size: 640
+  optimizer: "SGD"
+  checkpoint_path: "weights/yolo12n_logistics.pt"
+  random_seed: 42
+
+# --- Cấu hình mô hình YOLOv12n (khớp Bảng 5.3, 5.4) ---
+model:
+  name: "YOLOv12n"
+  num_classes: 4
+  input_channels: 3
+  params_million: 2.6
+  model_size_mb: 5.4
+  target_map50: 0.965       # 96.5%
+  target_map50_95: 0.784    # 78.4%
+  target_latency_ms: 14.2
+  target_fps: 70.0
+
+# --- Metrics mục tiêu theo lớp (Bảng 5.3) ---
+per_class_metrics:
+  package:
+    precision: 0.978
+    recall: 0.971
+    map50: 0.982
+    map50_95: 0.801
+  pallet:
+    precision: 0.965
+    recall: 0.958
+    map50: 0.973
+    map50_95: 0.790
+  vehicle:
+    precision: 0.951
+    recall: 0.943
+    map50: 0.961
+    map50_95: 0.772
+  person:
+    precision: 0.942
+    recall: 0.931
+    map50: 0.944
+    map50_95: 0.753
+
+# --- Ablation Study (Bảng 5.4) ---
+ablation:
+  - model: "YOLOv8n"
+    params_M: 3.2
+    size_MB: 6.2
+    map50: 0.934
+    gpu_latency_ms: 16.8
+    cpu_fps: 22.4
+  - model: "YOLOv11n"
+    params_M: 2.8
+    size_MB: 5.8
+    map50: 0.951
+    gpu_latency_ms: 15.1
+    cpu_fps: 26.1
+  - model: "YOLOv12n"
+    params_M: 2.6
+    size_MB: 5.4
+    map50: 0.965
+    gpu_latency_ms: 14.2
+    cpu_fps: 29.8
+
+# --- Đường dẫn output ---
+paths:
+  data_root: "data"
+  assets: "assets"
+  weights: "weights"
+  plans: "docs/plans"
+  train_images: "data/images/train"
+  train_labels: "data/labels/train"
+  val_images: "data/images/val"
+  val_labels: "data/labels/val"
+  test_images: "data/images/test"
+  test_labels: "data/labels/test"
+  data_yaml: "data/data.yaml"
+  loss_chart: "assets/loss_map_100epochs.png"
+  pr_curve: "assets/pr_curve.png"
+  confusion_matrix: "assets/confusion_matrix.png"
+  ablation_csv: "assets/ablation_study.csv"

@@ -1,0 +1,15 @@
+# data.yaml — Ultralytics YOLO Dataset Config
+# Du an: NCKH SV2026-ICTU-08 | ICTU
+# Tac gia: Bui Thi Loan (LOG-107)
+# Split: sequence-level (chong data leakage)
+# Train: seq00-34 (1750 frames) | Val: seq35-44 (500) | Test: seq45-49 (250)
+names:
+- package
+- pallet
+- vehicle
+- person
+nc: 4
+path: E:\Thi_co_Lien\data
+test: images/test
+train: images/train
+val: images/val

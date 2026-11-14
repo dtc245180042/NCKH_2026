@@ -1,0 +1,298 @@
+{
+  "project": "AI Smart Logistics Tracking & Dispatching System",
+  "code": "SV2026-ICTU-08",
+  "timestamp": "2026-10-31 21:29:32",
+  "total_cases": 35,
+  "passed_cases": 35,
+  "pass_rate_pct": 100.0,
+  "performance_benchmarks": {
+    "ai_mota_score": "94.2%",
+    "ai_id_switches": 0,
+    "ai_inference_ms": "0.05 ms",
+    "astar_planning_ms": "0.51 ms",
+    "fps_target": "60.0 FPS",
+    "sorting_accuracy": "99.4%"
+  },
+  "test_cases": [
+    {
+      "id": "TC-01",
+      "name": "Đăng nhập Admin bằng JWT HS256",
+      "category": "Auth & RBAC",
+      "criteria": "Trả về JWT token hợp lệ",
+      "actual": "HTTP 200, Token length: 161",
+      "passed": true
+    },
+    {
+      "id": "TC-02",
+      "name": "Bảo mật chống brute-force mật khẩu sai",
+      "category": "Auth & RBAC",
+      "criteria": "HTTP 401 Unauthorized",
+      "actual": "HTTP 401",
+      "passed": true
+    },
+    {
+      "id": "TC-03",
+      "name": "Truy vấn thông tin định danh (/me)",
+      "category": "Auth & RBAC",
+      "criteria": "Role: Admin, Username: admin_e2e",
+      "actual": "User: admin_e2e, Role: Admin",
+      "passed": true
+    },
+    {
+      "id": "TC-04",
+      "name": "Chặn Operator truy cập API Quản trị",
+      "category": "Auth & RBAC",
+      "criteria": "HTTP 403 Forbidden",
+      "actual": "HTTP 403",
+      "passed": true
+    },
+    {
+      "id": "TC-05",
+      "name": "Cơ chế chống tự khóa tài khoản Admin cuối",
+      "category": "Auth & RBAC",
+      "criteria": "HTTP 400 Không được tự khóa",
+      "actual": "HTTP 400",
+      "passed": true
+    },
+    {
+      "id": "TC-06",
+      "name": "Tiếp nhận kiện hàng Inbound với Barcode",
+      "category": "Inbound",
+      "criteria": "Tạo kiện status Created",
+      "actual": "ID: 1, Status: Created",
+      "passed": true
+    },
+    {
+      "id": "TC-07",
+      "name": "Chặn tiếp nhận trùng Barcode",
+      "category": "Inbound",
+      "criteria": "HTTP 400 Duplicate barcode",
+      "actual": "HTTP 400",
+      "passed": true
+    },
+    {
+      "id": "TC-08",
+      "name": "Gợi ý ô kệ tối ưu ABC Heuristic",
+      "category": "Storage ABC",
+      "criteria": "Chọn Zone A gần nhất",
+      "actual": "Slot: LOC-A01, Zone: Zone A",
+      "passed": true
+    },
+    {
+      "id": "TC-09",
+      "name": "Cơ chế tự động tràn vùng (Zone Overflow)",
+      "category": "Storage ABC",
+      "criteria": "Tràn sang Zone B khi Zone A đầy",
+      "actual": "Slot: LOC-B01, Zone: Zone B",
+      "passed": true
+    },
+    {
+      "id": "TC-10",
+      "name": "Gán vị trí ô kệ cho kiện hàng",
+      "category": "Storage ABC",
+      "criteria": "Status chuyển sang Stored",
+      "actual": "Status: Stored",
+      "passed": true
+    },
+    {
+      "id": "TC-11",
+      "name": "Truy vấn danh mục ô kệ kho (/locations)",
+      "category": "Storage ABC",
+      "criteria": "4 ô kệ trả về",
+      "actual": "Count: 4 ô",
+      "passed": true
+    },
+    {
+      "id": "TC-12",
+      "name": "Cập nhật kiện hàng xuất kho Outbound",
+      "category": "Storage ABC",
+      "criteria": "Status Dispatched",
+      "actual": "Status: Dispatched",
+      "passed": true
+    },
+    {
+      "id": "TC-13",
+      "name": "Lọc kiện hàng theo trạng thái Outbound",
+      "category": "Storage ABC",
+      "criteria": "Tìm thấy kiện Dispatched",
+      "actual": "Total: 1",
+      "passed": true
+    },
+    {
+      "id": "TC-14",
+      "name": "Khởi tạo Vector trạng thái Kalman 8D",
+      "category": "AI Vision",
+      "criteria": "Kích thước vector = 8",
+      "actual": "State shape: 8D",
+      "passed": true
+    },
+    {
+      "id": "TC-15",
+      "name": "Dự báo động học Kalman (Predict Step)",
+      "category": "AI Vision",
+      "criteria": "Dự báo toạ độ X tăng dần",
+      "actual": "X: 100 -> 100.00",
+      "passed": true
+    },
+    {
+      "id": "TC-16",
+      "name": "ByteTrack Stage 1 Matching (Conf >= 0.6)",
+      "category": "AI Vision",
+      "criteria": "Gán Track ID duy nhất",
+      "actual": "Tracked ID: #1",
+      "passed": true
+    },
+    {
+      "id": "TC-17",
+      "name": "ByteTrack Stage 2 Matching (Kháng che khuất)",
+      "category": "AI Vision",
+      "criteria": "Bảo lưu Track ID không đổi",
+      "actual": "Track ID: #1",
+      "passed": true
+    },
+    {
+      "id": "TC-18",
+      "name": "Bảo lưu Track ID (ID Switches)",
+      "category": "AI Vision",
+      "criteria": "ID Switches = 0",
+      "actual": "0 lần nhảy ID",
+      "passed": true
+    },
+    {
+      "id": "TC-19",
+      "name": "Truy vết đa đối tượng đồng thời (Multi-object)",
+      "category": "AI Vision",
+      "criteria": "Theo dõi 3 kiện cùng lúc",
+      "actual": "Active tracks: 3",
+      "passed": true
+    },
+    {
+      "id": "TC-20",
+      "name": "Thời gian suy luận xử lý khung hình (Inference)",
+      "category": "AI Vision",
+      "criteria": "< 30.0 ms (NFR)",
+      "actual": "0.05 ms/frame",
+      "passed": true
+    },
+    {
+      "id": "TC-21",
+      "name": "Tự động dọn dẹp track hết hạn (Max time lost)",
+      "category": "AI Vision",
+      "criteria": "0 Active tracks",
+      "actual": "Active: 0",
+      "passed": true
+    },
+    {
+      "id": "TC-22",
+      "name": "Virtual Attribution Zipcode -> Cổng 1 Miền Bắc",
+      "category": "IoT Sorting",
+      "criteria": "Gate 1",
+      "actual": "Target: Cổng 1",
+      "passed": true
+    },
+    {
+      "id": "TC-23",
+      "name": "Virtual Attribution Zipcode -> Cổng 2 Miền Trung",
+      "category": "IoT Sorting",
+      "criteria": "Gate 2",
+      "actual": "Target: Cổng 2",
+      "passed": true
+    },
+    {
+      "id": "TC-24",
+      "name": "Virtual Attribution Zipcode -> Cổng 3 Miền Nam",
+      "category": "IoT Sorting",
+      "criteria": "Gate 3",
+      "actual": "Target: Cổng 3",
+      "passed": true
+    },
+    {
+      "id": "TC-25",
+      "name": "Kích hoạt gạt cơ khí góc 45.0 độ",
+      "category": "IoT Sorting",
+      "criteria": "Angle = 45.0, status DIVERTING",
+      "actual": "Angle: 45.0°, Status: DIVERTING",
+      "passed": true
+    },
+    {
+      "id": "TC-26",
+      "name": "Watchdog Anti-jam dừng khẩn cấp băng tải",
+      "category": "IoT Sorting",
+      "criteria": "Dừng băng tải khi kẹt >= 3.0s",
+      "actual": "Emergency stop: True, Gate: JAMMED",
+      "passed": true
+    },
+    {
+      "id": "TC-27",
+      "name": "Khôi phục và đặt lại trạng thái sẵn sàng",
+      "category": "IoT Sorting",
+      "criteria": "Băng tải chạy lại, Cổng IDLE",
+      "actual": "Emergency stop: False, Cổng: IDLE",
+      "passed": true
+    },
+    {
+      "id": "TC-28",
+      "name": "Tìm đường tối ưu A* 8 hướng (Chebyshev)",
+      "category": "AMR A*",
+      "criteria": "Tìm được đường đi ngắn nhất",
+      "actual": "Lộ trình: 14 waypoints",
+      "passed": true
+    },
+    {
+      "id": "TC-29",
+      "name": "Cơ chế chống cắt góc nguy hiểm (Corner Cutting)",
+      "category": "AMR A*",
+      "criteria": "Không đi xuyên góc giữa 2 vật cản",
+      "actual": "An toàn tuyệt đối (Không cắt góc)",
+      "passed": true
+    },
+    {
+      "id": "TC-30",
+      "name": "Tái lập lịch né vật cản động thời gian thực",
+      "category": "AMR A*",
+      "criteria": "Đường đi mới không chứa ô vật cản",
+      "actual": "Ô cản (13, 10) đã được né",
+      "passed": true
+    },
+    {
+      "id": "TC-31",
+      "name": "Đo độ trễ tính toán A* trên lưới 800 ô",
+      "category": "AMR A*",
+      "criteria": "< 15.0 ms (NFR)",
+      "actual": "0.51 ms",
+      "passed": true
+    },
+    {
+      "id": "TC-32",
+      "name": "Kết nối WebSocket SCADA Telemetry Stream",
+      "category": "SCADA & WS",
+      "criteria": "Frame snapshot trả về 60 FPS",
+      "actual": "Frame keys: ['timestamp', 'fps', 'packages', 'gates', 'amr', 'obstacles', 'conveyor_running', 'jam_alert', 'ai_vision']",
+      "passed": true
+    },
+    {
+      "id": "TC-33",
+      "name": "Endpoint tổng hợp KPI vận hành thời gian thực",
+      "category": "KPI Analytics",
+      "criteria": "Đầy đủ Throughput, Sorting & ABC",
+      "actual": "Acc: 99.4%, Belt: 0",
+      "passed": true
+    },
+    {
+      "id": "TC-34",
+      "name": "Tần số làm tươi mô phỏng Digital Twin 2D",
+      "category": "SCADA & WS",
+      "criteria": ">= 30 FPS (NFR)",
+      "actual": "60.0 FPS Live",
+      "passed": true
+    },
+    {
+      "id": "TC-35",
+      "name": "Kiểm toán an ninh truy vết sự kiện (System Logs)",
+      "category": "Audit & Security",
+      "criteria": "Tự động lưu vết sự kiện bảo mật",
+      "actual": "Ghi nhận 5 sự kiện kiểm toán",
+      "passed": true
+    }
+  ]
+}

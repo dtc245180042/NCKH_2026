@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Phiếu Xuất Hàng & Bàn Giao Vận Chuyển A4 - NEXUSLOG</title>
+    <style>
+        @page { size: A4 portrait; margin: 12mm; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+            background-color: #525659;
+            margin: 0;
+            padding: 25px 0;
+            display: flex;
+            justify-content: center;
+        }
+        .page-a4 {
+            width: 794px; /* Standard A4 at 96 DPI */
+            min-height: 1123px;
+            background: #ffffff;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-sizing: border-box;
+            padding: 40px 45px;
+            color: #0f172a;
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0284c7;
+            padding-bottom: 12px;
+            margin-bottom: 15px;
+        }
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-badge {
+            background: #0284c7;
+            color: white;
+            font-weight: 900;
+            font-size: 20px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            letter-spacing: 1px;
+        }
+        .company-name {
+            font-size: 15px;
+            font-weight: 800;
+            color: #0f172a;
+            text-transform: uppercase;
+        }
+        .company-sub {
+            font-size: 11px;
+            color: #64748b;
+        }
+        .doc-meta-right {
+            text-align: right;
+            font-size: 11px;
+            color: #475569;
+        }
+        .doc-meta-right strong {
+            color: #0f172a;
+        }
+        .title-block {
+            text-align: center;
+            margin: 20px 0 15px 0;
+        }
+        .title-main {
+            font-size: 18px;
+            font-weight: 800;
+            color: #0369a1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .title-sub {
+            font-size: 12px;
+            color: #64748b;
+            font-style: italic;
+            margin-top: 3px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px 25px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 12px 18px;
+            font-size: 12.5px;
+            margin-bottom: 18px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+        }
+        .info-label {
+            color: #475569;
+        }
+        .info-value {
+            font-weight: 600;
+            color: #0f172a;
+        }
+        table.manifest-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-bottom: 15px;
+        }
+        table.manifest-table th {
+            background-color: #0f172a;
+            color: #ffffff;
+            font-weight: 700;
+            text-align: center;
+            padding: 8px 6px;
+            border: 1px solid #0f172a;
+            font-size: 11.5px;
+        }
+        table.manifest-table td {
+            border: 1px solid #cbd5e1;
+            padding: 7px 8px;
+            font-size: 12px;
+        }
+        table.manifest-table tr:nth-child(even) {
+            background-color: #f8fafc;
+        }
+        .col-mono {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-weight: 700;
+            color: #0284c7;
+            text-align: center;
+        }
+        .total-row td {
+            background-color: #f1f5f9;
+            font-weight: 800;
+            border-top: 2px solid #0284c7;
+        }
+        .signatures {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            text-align: center;
+            margin-top: 35px;
+            page-break-inside: avoid;
+        }
+        .sig-title {
+            font-weight: 700;
+            font-size: 12.5px;
+            color: #0f172a;
+        }
+        .sig-sub {
+            font-size: 11px;
+            color: #64748b;
+            font-style: italic;
+            margin-top: 2px;
+        }
+        .sig-space {
+            height: 65px;
+        }
+        .sig-name {
+            font-weight: 700;
+            font-size: 12px;
+            color: #0f172a;
+        }
+        .footer-note {
+            margin-top: 35px;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 8px;
+            font-size: 10.5px;
+            color: #94a3b8;
+            text-align: center;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-a4">
+    <!-- Header -->
+    <div class="header-top">
+        <div class="logo-box">
+            <div class="logo-badge">NEXUSLOG</div>
+            <div>
+                <div class="company-name">Tổng Kho Trung Chuyển Bưu Chính Thông Minh</div>
+                <div class="company-sub">Hệ thống AI Truy Vết, Phân Loại YOLOv12 & Điều Phối AMR Robot (SV2026-07-82)</div>
+            </div>
+        </div>
+        <div class="doc-meta-right">
+            <div>Mẫu số: <strong>02-VT/LOG</strong></div>
+            <div>Số: <strong style="color:#0284c7;">PXK-2026-88291</strong></div>
+            <div>Ngày in: <strong>04/11/2026</strong></div>
+        </div>
+    </div>
+
+    <!-- Title -->
+    <div class="title-block">
+        <div class="title-main">Hóa Đơn Kiêm Biên Bản Bàn Giao Vận Chuyển Xuất Kho</div>
+        <div class="title-sub">(OUTBOUND FREIGHT DISPATCH INVOICE & MANIFEST)</div>
+    </div>
+
+    <!-- Info Grid -->
+    <div class="info-grid">
+        <div class="info-item">
+            <span class="info-label">Tuyến điều phối:</span>
+            <span class="info-value" style="color:#0284c7;">Hub Miền Bắc (Hà Nội - Bắc Ninh - Hải Phòng)</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Phương tiện tiếp nhận:</span>
+            <span class="info-value">Xe Tải Chuyên Tuyến (Biển số: 29C-882.91)</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Cửa xuất hàng (Dock):</span>
+            <span class="info-value">Cửa số 01 — Khu Vực Xuất Hàng Liên Tỉnh</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Tài xế vận chuyển:</span>
+            <span class="info-value">Nguyễn Văn Bình (GPLX: H-192842)</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Thời gian xuất kho:</span>
+            <span class="info-value">16:45:00 — 04/11/2026</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">Trạng thái xác thực AI:</span>
+            <span class="info-value" style="color:#059669;">✓ 100% Khớp Mã Code128 & Trọng Lượng</span>
+        </div>
+    </div>
+
+    <!-- Manifest Table -->
+    <table class="manifest-table">
+        <thead>
+            <tr>
+                <th style="width:35px;">STT</th>
+                <th style="width:130px;">Mã Vận Đơn</th>
+                <th style="width:140px;">Tỉnh Thành Đích</th>
+                <th style="width:140px;">Kệ Gom Hàng</th>
+                <th style="width:90px;">Cụm Hub</th>
+                <th style="width:75px;">Khối Lượng</th>
+                <th style="width:95px;">Trạng Thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="text-align:center;">1</td>
+                <td class="col-mono">PKG-1002-HN</td>
+                <td><strong>Hà Nội</strong> (Hoàn Kiếm)</td>
+                <td>Kệ A1 (Ô 01)</td>
+                <td style="text-align:center;">Miền Bắc</td>
+                <td style="text-align:right;">2.5 kg</td>
+                <td style="text-align:center; color:#059669; font-weight:600;">Đã Xếp Xe</td>
+            </tr>
+            <tr>
+                <td style="text-align:center;">2</td>
+                <td class="col-mono">PKG-1005-BN</td>
+                <td><strong>Bắc Ninh</strong> (Từ Sơn)</td>
+                <td>Kệ A1 (Ô 02)</td>
+                <td style="text-align:center;">Miền Bắc</td>
+                <td style="text-align:right;">1.8 kg</td>
+                <td style="text-align:center; color:#059669; font-weight:600;">Đã Xếp Xe</td>
+            </tr>
+            <tr>
+                <td style="text-align:center;">3</td>
+                <td class="col-mono">PKG-1008-HP</td>
+                <td><strong>Hải Phòng</strong> (Hồng Bàng)</td>
+                <td>Kệ A2 (Ô 01)</td>
+                <td style="text-align:center;">Miền Bắc</td>
+                <td style="text-align:right;">3.2 kg</td>
+                <td style="text-align:center; color:#059669; font-weight:600;">Đã Xếp Xe</td>
+            </tr>
+            <tr>
+                <td style="text-align:center;">4</td>
+                <td class="col-mono">PKG-1011-QN</td>
+                <td><strong>Quảng Ninh</strong> (Hạ Long)</td>
+                <td>Kệ A2 (Ô 02)</td>
+                <td style="text-align:center;">Miền Bắc</td>
+                <td style="text-align:right;">2.1 kg</td>
+                <td style="text-align:center; color:#059669; font-weight:600;">Đã Xếp Xe</td>
+            </tr>
+            <tr>
+                <td style="text-align:center;">5</td>
+                <td class="col-mono">PKG-1014-PT</td>
+                <td><strong>Phú Thọ</strong> (Việt Trì)</td>
+                <td>Kệ A3 (Ô 01)</td>
+                <td style="text-align:center;">Miền Bắc</td>
+                <td style="text-align:right;">1.4 kg</td>
+                <td style="text-align:center; color:#059669; font-weight:600;">Đã Xếp Xe</td>
+            </tr>
+            <tr>
+                <td style="text-align:center;">6</td>
+                <td class="col-mono">PKG-1017-TN</td>
+                <td><strong>Thái Nguyên</strong> (Sông Công)</td>
+                <td>Kệ A3 (Ô 02)</td>
+                <td style="text-align:center;">Miền Bắc</td>
+                <td style="text-align:right;">2.8 kg</td>
+                <td style="text-align:center; color:#059669; font-weight:600;">Đã Xếp Xe</td>
+            </tr>
+            <tr>
+                <td style="text-align:center;">7</td>
+                <td class="col-mono">PKG-1020-VP</td>
+                <td><strong>Vĩnh Phúc</strong> (Phúc Yên)</td>
+                <td>Kệ A1 (Ô 03)</td>
+                <td style="text-align:center;">Miền Bắc</td>
+                <td style="text-align:right;">1.9 kg</td>
+                <td style="text-align:center; color:#059669; font-weight:600;">Đã Xếp Xe</td>
+            </tr>
+            <tr>
+                <td style="text-align:center;">8</td>
+                <td class="col-mono">PKG-1023-HD</td>
+                <td><strong>Hải Dương</strong> (Chí Linh)</td>
+                <td>Kệ A2 (Ô 03)</td>
+                <td style="text-align:center;">Miền Bắc</td>
+                <td style="text-align:right;">2.7 kg</td>
+                <td style="text-align:center; color:#059669; font-weight:600;">Đã Xếp Xe</td>
+            </tr>
+            <tr class="total-row">
+                <td colspan="2" style="text-align:center;">TỔNG CỘNG ĐỢT XUẤT:</td>
+                <td style="color:#0369a1; font-weight:bold;">08 KIỆN HÀNG</td>
+                <td colspan="2" style="text-align:right;">TỔNG TRỌNG LƯỢNG HÀNG:</td>
+                <td style="text-align:right; color:#b91c1c; font-weight:800;">18.4 kg</td>
+                <td style="text-align:center; color:#059669;">HOÀN TẤT</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Signatures -->
+    <div class="signatures">
+        <div>
+            <div class="sig-title">NGƯỜI LẬP PHIẾU</div>
+            <div class="sig-sub">(Ký, ghi rõ họ tên)</div>
+            <div class="sig-space"></div>
+            <div class="sig-name">Admin Hệ Thống SCADA</div>
+        </div>
+        <div>
+            <div class="sig-title">THỦ KHO XUẤT HÀNG</div>
+            <div class="sig-sub">(Ký, ghi rõ họ tên)</div>
+            <div class="sig-space"></div>
+            <div class="sig-name">Trần Văn Hoàng</div>
+        </div>
+        <div>
+            <div class="sig-title">LÁI XE TIẾP NHẬN</div>
+            <div class="sig-sub">(Ký, ghi rõ họ tên)</div>
+            <div class="sig-space"></div>
+            <div class="sig-name">Nguyễn Văn Bình</div>
+        </div>
+    </div>
+
+    <!-- Footer Note -->
+    <div class="footer-note">
+        * Chứng từ được sinh tự động bởi Hệ Thống Điều Phối Kho Thông Minh NEXUSLOG (SV2026-07-82). Dữ liệu đối soát mã vạch Code128 đã được lưu trữ vào cơ sở dữ liệu kiểm toán.
+    </div>
+</div>
+
+</body>
+</html>
