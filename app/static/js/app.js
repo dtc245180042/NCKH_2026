@@ -199,6 +199,7 @@ document.addEventListener("DOMContentLoaded", () => {
     initSlotModal();
     initAnalytics();
     init3DViewControls();
+    initManualOverrideControls();
 
     const urlParams = new URLSearchParams(window.location.search);
     const tokenParam = urlParams.get("token");
@@ -2766,3 +2767,96 @@ function init3DViewControls() {
         });
     }
 }
+
+// ==========================================================================
+// BẢNG CAN THIỆP THỦ CÔNG & XỬ LÝ SỰ CỐ (MANUAL OVERRIDE SCADA)
+// ==========================================================================
+function initManualOverrideControls() {
+    const btnEstop = document.getElementById("btn-emergency-stop");
+    const btnUnjam = document.getElementById("btn-jam-clear-reverse");
+    const btnForce1 = document.getElementById("btn-force-gate-1");
+    const btnForce2 = document.getElementById("btn-force-gate-2");
+    const btnForce3 = document.getElementById("btn-force-gate-3");
+    const btnDockAmr = document.getElementById("btn-force-amr-dock");
+    const btnResumeAmr = document.getElementById("btn-resume-amr");
+
+    function sendCmd(action, payload = {}) {
+        // 1. Gửi qua WebSocket tới Backend
+        if (AppState.ws && AppState.ws.readyState === WebSocket.OPEN) {
+            AppState.ws.send(JSON.stringify({ action, ...payload }));
+        }
+        // 2. Gửi sang 3D Digital Twin qua postMessage nếu đang mở
+        const iframe3D = document.getElementById("iframe-3d-sim");
+        if (iframe3D && iframe3D.contentWindow) {
+            iframe3D.contentWindow.postMessage({ action, ...payload }, "*");
+        }
+    }
+
+    // 1. E-STOP Toàn Bộ Kho
+    if (btnEstop) {
+        btnEstop.addEventListener("click", () => {
+            AppState.isEmergencyStopped = !AppState.isEmergencyStopped;
+            sendCmd("EMERGENCY_STOP_ALL", { enable: AppState.isEmergencyStopped });
+            
+            if (AppState.isEmergencyStopped) {
+                btnEstop.style.background = "#dc2626";
+                btnEstop.style.color = "#ffffff";
+                btnEstop.style.borderColor = "#991b1b";
+                btnEstop.innerHTML = '<i class="fa-solid fa-octagon-exclamation fa-beat"></i> NHẢ E-STOP (BÌNH THƯỜNG)';
+                showToast("🛑 ĐÃ KÍCH HOẠT DỪNG KHẨN CẤP (E-STOP) TOÀN BỘ KHO!", "error");
+            } else {
+                btnEstop.style.background = "#fee2e2";
+                btnEstop.style.color = "#b91c1c";
+                btnEstop.style.borderColor = "#fca5a5";
+                btnEstop.innerHTML = '<i class="fa-solid fa-octagon-exclamation"></i> E-STOP Toàn Bộ Kho';
+                showToast("✅ Đã nhả E-STOP. Hệ thống khôi phục vận hành!", "success");
+            }
+        });
+    }
+
+    // 2. Gỡ Kẹt Băng Tải (Đảo chiều 2s)
+    if (btnUnjam) {
+        btnUnjam.addEventListener("click", () => {
+            sendCmd("CONVEYOR_REVERSE", { duration: 2.0 });
+            showToast("🔄 Đang đảo chiều băng tải 2 giây để giải phóng kẹt kiện hàng...", "warning");
+            btnUnjam.disabled = true;
+            btnUnjam.style.opacity = "0.5";
+            setTimeout(() => {
+                btnUnjam.disabled = false;
+                btnUnjam.style.opacity = "1";
+            }, 2500);
+        });
+    }
+
+    // 3. Force Cổng 1, 2, 3
+    const forceBtns = [
+        { el: btnForce1, id: 1, name: "Bắc" },
+        { el: btnForce2, id: 2, name: "Trung" },
+        { el: btnForce3, id: 3, name: "Nam" }
+    ];
+    forceBtns.forEach(f => {
+        if (f.el) {
+            f.el.addEventListener("click", () => {
+                sendCmd("FORCE_GATE_ACTUATOR", { gate_id: f.id });
+                showToast(`⚡ MANUAL OVERRIDE: Force gạt Cổng ${f.id} (${f.name})!`, "success");
+            });
+        }
+    });
+
+    // 4. Điều AMR-01 Về Sạc
+    if (btnDockAmr) {
+        btnDockAmr.addEventListener("click", () => {
+            sendCmd("FORCE_AMR_DOCK", { robot_id: "AMR-01" });
+            showToast("⚡ MANUAL OVERRIDE: Điều AMR-01 di chuyển về trạm sạc!", "info");
+        });
+    }
+
+    // 5. Khôi Phục AMR
+    if (btnResumeAmr) {
+        btnResumeAmr.addEventListener("click", () => {
+            sendCmd("RESUME_AMR", { robot_id: "AMR-01" });
+            showToast("✅ Đã phát lệnh khôi phục trạng thái hoạt động cho AMR!", "success");
+        });
+    }
+}
+

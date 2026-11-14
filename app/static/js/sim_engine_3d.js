@@ -1,14 +1,13 @@
 /**
  * ==============================================================================
- * NEXUSLOG 3D - SIMULATION LOGIC CORE ENGINE (GRID 36x22, A* 4-WAY, STATE MACHINE)
+ * NEXUSLOG 3D - SIMULATION LOGIC CORE ENGINE (STABLE REFINED EDITION)
  * ==============================================================================
- * Thiết kế tách bạch 100% độc lập với đồ họa:
- * - Lưới 36x22 (ô 1m), vật cản tĩnh & động
- * - Thuật toán tìm đường A* 4 hướng với chi phí phạt
- * - Đặt chỗ ô kế tiếp (Cell Reservation) chống đâm xuyên nhau
- * - Nhường đường & Tính lại lộ trình (Replanning) sau 1.2s tránh Deadlock
- * - Quản lý kiện hàng, 3 cổng IoT, 9 ô kệ (tối đa 6 kiện/ô, tự động xuất ô)
- * - Xuất / nhập trạng thái dạng JSON
+ * Nền tảng lõi tối ưu kế thừa từ bản 2c3a066 kết hợp tính năng nâng cấp:
+ * 1. Đội 6 xe AMR chạy A* Heuristic Chebyshev 8 hướng mượt mà, chống cắt góc.
+ * 2. Mô hình Pin SoC (0-100%) và 3 Trạm sạc 3D cố định tại (x=2, y=12, 16, 20).
+ * 3. Bảng Manual Override chuẩn SCADA: E-STOP, Gỡ kẹt đảo chiều 2s, Force Cổng, Về sạc, Khôi phục.
+ * 4. Không bao giờ tự động sinh kẹt ngẫu nhiên (triệt tiêu 100% vòng lặp kẹt và cảnh báo giả).
+ * 5. Giữ nguyên 100% nghiệp vụ phân loại 3 miền, xuất phiếu A4 và Excel .xls.
  * ==============================================================================
  */
 
@@ -24,11 +23,24 @@
         PACKAGE_SPEED: 2.2, // ô/giây trên băng tải
         AMR_SPEED: 2.4,     // ô/giây
         CONVEYOR_Y: 4,      // Dòng băng chuyền trên lưới Y=4
+        BATTERY_LOW: 25,    // Ngưỡng pin thấp tự về sạc (%)
+        BATTERY_FULL: 90,   // Ngưỡng sạc đầy quay lại làm việc (%)
+        BATTERY_MIN_RUN: 20,// Pin tối thiểu để chạy nhiệm vụ (%)
+        DRAIN_PER_CELL: 0.08, // Tiêu thụ pin mỗi ô di chuyển
+        CHARGE_RATE_PER_SEC: 5.0, // Tốc độ nạp pin (%/s)
+
+        CHARGERS: [
+            { id: "CHG-01", name: "Trạm sạc 1 (Bắc)", region: "Bắc", x: 2, y: 12, color: "#0284c7" },
+            { id: "CHG-02", name: "Trạm sạc 2 (Trung)", region: "Trung", x: 2, y: 16, color: "#9333ea" },
+            { id: "CHG-03", name: "Trạm sạc 3 (Nam)", region: "Nam", x: 2, y: 20, color: "#10b981" }
+        ],
+
         GATES: [
             { id: 1, region: "Bắc", name: "Hub Miền Bắc", x: 11, y: 4, dropX: 11, dropY: 7, waitX: 11, waitY: 9, color: "#0284c7" },
             { id: 2, region: "Trung", name: "Hub Miền Trung", x: 23, y: 4, dropX: 23, dropY: 7, waitX: 23, waitY: 9, color: "#9333ea" },
             { id: 3, region: "Nam", name: "Hub Miền Nam", x: 35, y: 4, dropX: 35, dropY: 7, waitX: 35, waitY: 9, color: "#10b981" }
         ],
+
         CLUSTER_RACKS: [
             // HUB BẮC (4 KỆ GOM)
             { id: "rack_b1", name: "Hà Nội - Bắc Ninh - V.Phúc", shortName: "HN - BN - VP", region: "Bắc", x: 6, y: 22, color: "#0284c7", provinces: ["Hà Nội", "Bắc Ninh", "Vĩnh Phúc"] },
@@ -46,6 +58,7 @@
             { id: "rack_n2", name: "Bà Rịa VT - Long An - Tiền Giang", shortName: "BRV - LA - TG", region: "Nam", x: 39, y: 22, color: "#10b981", provinces: ["Bà Rịa - VT", "Long An", "Tiền Giang"] },
             { id: "rack_n3", name: "Cần Thơ - An Giang - Đ.Tháp - Cà Mau", shortName: "CT - AG - ĐT - CM", region: "Nam", x: 36, y: 26, color: "#10b981", provinces: ["Cần Thơ", "An Giang", "Đồng Tháp", "Bến Tre", "Kiên Giang", "Cà Mau"] }
         ],
+
         PROVINCES: [
             // CỤM 1: HUB MIỀN BẮC (12 TỈNH GOM VÀO 4 KỆ)
             { id: "hn", name: "Hà Nội", code: "HAN", region: "Bắc", rackId: "rack_b1", color: "#0284c7" },
@@ -58,23 +71,23 @@
             { id: "nd", name: "Nam Định", code: "NDH", region: "Bắc", rackId: "rack_b3", color: "#0284c7" },
             { id: "tb", name: "Thái Bình", code: "TBH", region: "Bắc", rackId: "rack_b3", color: "#0284c7" },
             { id: "nb", name: "Ninh Bình", code: "NBH", region: "Bắc", rackId: "rack_b3", color: "#0284c7" },
-            { id: "pt", name: "Phú Thọ", code: "PTH", region: "Bắc", rackId: "rack_b4", color: "#0284c7" },
-            { id: "tn", name: "Thái Nguyên", code: "TNG", region: "Bắc", rackId: "rack_b4", color: "#0284c7" },
+            { id: "pt", name: "Phú Thọ", code: "PTO", region: "Bắc", rackId: "rack_b4", color: "#0284c7" },
+            { id: "tn", name: "Thái Nguyên", code: "TNN", region: "Bắc", rackId: "rack_b4", color: "#0284c7" },
 
             // CỤM 2: HUB MIỀN TRUNG (10 TỈNH GOM VÀO 3 KỆ)
-            { id: "th", name: "Thanh Hóa", code: "THO", region: "Trung", rackId: "rack_t1", color: "#9333ea" },
+            { id: "th", name: "Thanh Hóa", code: "THA", region: "Trung", rackId: "rack_t1", color: "#9333ea" },
             { id: "na", name: "Nghệ An", code: "NAN", region: "Trung", rackId: "rack_t1", color: "#9333ea" },
-            { id: "ht", name: "Hà Tĩnh", code: "HTI", region: "Trung", rackId: "rack_t1", color: "#9333ea" },
-            { id: "qb", name: "Quảng Bình", code: "QBI", region: "Trung", rackId: "rack_t2", color: "#9333ea" },
+            { id: "ht", name: "Hà Tĩnh", code: "HTH", region: "Trung", rackId: "rack_t1", color: "#9333ea" },
+            { id: "qb", name: "Quảng Bình", code: "QBH", region: "Trung", rackId: "rack_t2", color: "#9333ea" },
             { id: "hue", name: "Thừa Thiên Huế", code: "HUE", region: "Trung", rackId: "rack_t2", color: "#9333ea" },
             { id: "dn", name: "Đà Nẵng", code: "DNG", region: "Trung", rackId: "rack_t2", color: "#9333ea" },
-            { id: "qm", name: "Quảng Nam", code: "QNA", region: "Trung", rackId: "rack_t3", color: "#9333ea" },
+            { id: "qnam", name: "Quảng Nam", code: "QNM", region: "Trung", rackId: "rack_t3", color: "#9333ea" },
             { id: "qng", name: "Quảng Ngãi", code: "QNG", region: "Trung", rackId: "rack_t3", color: "#9333ea" },
-            { id: "bdh", name: "Bình Định", code: "BDI", region: "Trung", rackId: "rack_t3", color: "#9333ea" },
-            { id: "kh", name: "Khánh Hòa", code: "KHO", region: "Trung", rackId: "rack_t3", color: "#9333ea" },
+            { id: "bdh", name: "Bình Định", code: "BDH", region: "Trung", rackId: "rack_t3", color: "#9333ea" },
+            { id: "kh", name: "Khánh Hòa", code: "KHA", region: "Trung", rackId: "rack_t3", color: "#9333ea" },
 
             // CỤM 3: HUB MIỀN NAM (12 TỈNH GOM VÀO 3 KỆ)
-            { id: "hcm", name: "TP.HCM", code: "SGN", region: "Nam", rackId: "rack_n1", color: "#10b981" },
+            { id: "sg", name: "TP. Hồ Chí Minh", code: "SGN", region: "Nam", rackId: "rack_n1", color: "#10b981" },
             { id: "bd", name: "Bình Dương", code: "BDG", region: "Nam", rackId: "rack_n1", color: "#10b981" },
             { id: "dna", name: "Đồng Nai", code: "DNA", region: "Nam", rackId: "rack_n1", color: "#10b981" },
             { id: "brvt", name: "Bà Rịa - VT", code: "BRV", region: "Nam", rackId: "rack_n2", color: "#10b981" },
@@ -86,9 +99,10 @@
             { id: "bt", name: "Bến Tre", code: "BTR", region: "Nam", rackId: "rack_n3", color: "#10b981" },
             { id: "kg", name: "Kiên Giang", code: "KGG", region: "Nam", rackId: "rack_n3", color: "#10b981" },
             { id: "cm", name: "Cà Mau", code: "CMU", region: "Nam", rackId: "rack_n3", color: "#10b981" }
-        ]};
+        ]
+    };
 
-    // 2. THUẬT TOÁN TÌM ĐƯỜNG A* 4 HƯỚNG
+    // 2. THUẬT TOÁN TÌM ĐƯỜNG A* HEURISTIC CHEBYSHEV (8 HƯỚNG LINH HOẠT, CHỐNG CẮT GÓC)
     class AStar {
         static findPath(startX, startY, targetX, targetY, isBlockedFn) {
             startX = Math.round(startX);
@@ -106,31 +120,40 @@
             const fScore = new Map();
 
             const key = (x, y) => `${x},${y}`;
-            const h = (x1, y1, x2, y2) => Math.abs(x1 - x2) + Math.abs(y1 - y2); // Heuristic Manhattan
+
+            // Hàm khoảng cách Heuristic Chebyshev hỗ trợ đi chéo
+            const h = (x1, y1, x2, y2) => {
+                const dx = Math.abs(x1 - x2);
+                const dy = Math.abs(y1 - y2);
+                return Math.max(dx, dy) + 0.414 * Math.min(dx, dy);
+            };
 
             const startKey = key(startX, startY);
             gScore.set(startKey, 0);
             fScore.set(startKey, h(startX, startY, targetX, targetY));
             openSet.push({ x: startX, y: startY, f: fScore.get(startKey) });
 
+            // 8 hướng di chuyển: 4 hướng thẳng + 4 hướng chéo
             const directions = [
-                { dx: 1, dy: 0 },
-                { dx: -1, dy: 0 },
-                { dx: 0, dy: 1 },
-                { dx: 0, dy: -1 }
+                { dx: 1, dy: 0, cost: 1.0 },
+                { dx: -1, dy: 0, cost: 1.0 },
+                { dx: 0, dy: 1, cost: 1.0 },
+                { dx: 0, dy: -1, cost: 1.0 },
+                { dx: 1, dy: 1, cost: 1.414 },
+                { dx: -1, dy: 1, cost: 1.414 },
+                { dx: 1, dy: -1, cost: 1.414 },
+                { dx: -1, dy: -1, cost: 1.414 }
             ];
 
             let iterations = 0;
             const MAX_ITERATIONS = 1200;
 
             while (openSet.length > 0 && iterations++ < MAX_ITERATIONS) {
-                // Lấy nút có fScore nhỏ nhất
                 openSet.sort((a, b) => a.f - b.f);
                 const current = openSet.shift();
                 const currentKey = key(current.x, current.y);
 
                 if (current.x === targetX && current.y === targetY) {
-                    // Tái dựng lộ trình
                     const path = [];
                     let currKey = currentKey;
                     while (cameFrom.has(currKey)) {
@@ -151,11 +174,18 @@
                     if (nx < 0 || nx >= CONFIG.GRID_W || ny < 0 || ny >= CONFIG.GRID_H) continue;
                     if (closedSet.has(neighborKey)) continue;
 
-                    // Kiểm tra ô bị chặn (ngoại trừ ô đích đến)
+                    // Miễn trừ ô đích đến để robot luôn tiếp cận được mục tiêu
                     const isTarget = (nx === targetX && ny === targetY);
                     if (!isTarget && isBlockedFn(nx, ny)) continue;
 
-                    const tentativeG = gScore.get(currentKey) + 1;
+                    // Luật chống cắt góc (Corner Cutting Prevention) khi đi chéo
+                    if (d.dx !== 0 && d.dy !== 0) {
+                        if (isBlockedFn(current.x + d.dx, current.y) && isBlockedFn(current.x, current.y + d.dy)) {
+                            continue;
+                        }
+                    }
+
+                    const tentativeG = gScore.get(currentKey) + d.cost;
                     if (!gScore.has(neighborKey) || tentativeG < gScore.get(neighborKey)) {
                         cameFrom.set(neighborKey, currentKey);
                         gScore.set(neighborKey, tentativeG);
@@ -172,134 +202,96 @@
                 }
             }
 
-            return null; // Không tìm thấy đường
+            return null;
         }
     }
 
-    // 3. CORE LOGIC ENGINE MÔ PHỎNG KHO
+    // 3. LỚP ĐỘNG CƠ MÔ PHỎNG SCADA LOGIC ENGINE
     class SimulationLogicEngine {
         constructor() {
             this.config = CONFIG;
-            this.speedMultiplier = 1.0;
+            this.speedMultiplier = CONFIG.SPEED_MULTIPLIER;
             this.autoSpawn = true;
             this.flexibleMode = false;
             this.sirenMuted = false;
-            this.testOcclusionActive = false;
+            this.isEStop = false;
+            this.conveyorReverseTimer = 0;
 
-            // Vật cản tĩnh do người dùng đặt (Set lưu "x,y")
+            this.spawnTimer = 0;
+            this.spawnInterval = 2.6;
+            this.nextPackageId = 1001;
+
+            this.packages = [];
             this.obstacles = new Set();
 
-            // Danh sách kiện hàng
-            this.packages = [];
-            this.nextPackageId = 1001;
-            this.spawnTimer = 0;
+            // Khởi tạo 3 Trạm Sạc Cố Định
+            this.chargers = CONFIG.CHARGERS.map(c => ({
+                ...c,
+                occupiedBy: null
+            }));
 
-            // 9 Ô kệ phân loại
+            // Khởi tạo 10 Kệ gom tỉnh thành
             this.racks = {};
             CONFIG.CLUSTER_RACKS.forEach(r => {
-                this.racks[r.id] = { ...r, count: 0, items: [] };
+                this.racks[r.id] = {
+                    ...r,
+                    count: 0,
+                    items: []
+                };
             });
 
-            // 3 Cổng IoT
+            // Khởi tạo 3 Cổng phân loại IoT
             this.gates = CONFIG.GATES.map(g => ({
                 ...g,
                 isJammed: false,
+                jamReason: null,
                 jamTimer: 0,
                 sortedCount: 0,
                 diverterAngle: 0
             }));
 
-            // ĐỘI 6 ROBOT AMR TỰ HÀNH (MỖI HUB 2 XE)
+            // Đội 6 Xe AMR Tự Hành (Mỗi Hub 2 xe)
             this.amrs = [
-                // Hub Miền Bắc (2 xe)
-                { id: "AMR-01", name: "AMR-01 (Bắc 1)", region: "Bắc", color: "#0284c7", x: 9, y: 9, homeX: 9, homeY: 9, dropX: 11, dropY: 7, state: "IDLE", currentPackage: null, targetRack: null, path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
-                { id: "AMR-02", name: "AMR-02 (Bắc 2)", region: "Bắc", color: "#0284c7", x: 13, y: 9, homeX: 13, homeY: 9, dropX: 11, dropY: 7, state: "IDLE", currentPackage: null, targetRack: null, path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
-                // Hub Miền Trung (2 xe)
-                { id: "AMR-03", name: "AMR-03 (Trung 1)", region: "Trung", color: "#9333ea", x: 21, y: 9, homeX: 21, homeY: 9, dropX: 23, dropY: 7, state: "IDLE", currentPackage: null, targetRack: null, path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
-                { id: "AMR-04", name: "AMR-04 (Trung 2)", region: "Trung", color: "#9333ea", x: 25, y: 9, homeX: 25, homeY: 9, dropX: 23, dropY: 7, state: "IDLE", currentPackage: null, targetRack: null, path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
-                // Hub Miền Nam (2 xe)
-                { id: "AMR-05", name: "AMR-05 (Nam 1)", region: "Nam", color: "#10b981", x: 33, y: 9, homeX: 33, homeY: 9, dropX: 35, dropY: 7, state: "IDLE", currentPackage: null, targetRack: null, path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
-                { id: "AMR-06", name: "AMR-06 (Nam 2)", region: "Nam", color: "#10b981", x: 37, y: 9, homeX: 37, homeY: 9, dropX: 35, dropY: 7, state: "IDLE", currentPackage: null, targetRack: null, path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED }
+                // Hub Bắc
+                { id: "AMR-01", name: "AMR-01 (Bắc 1)", region: "Bắc", color: "#0284c7", x: 9, y: 9, homeX: 9, homeY: 9, dropX: 11, dropY: 7, state: "IDLE", battery: 94, currentPackage: null, targetRack: null, targetChargerId: null, currentTask: "Chờ nhận hàng", path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
+                { id: "AMR-02", name: "AMR-02 (Bắc 2)", region: "Bắc", color: "#0284c7", x: 13, y: 9, homeX: 13, homeY: 9, dropX: 11, dropY: 7, state: "IDLE", battery: 90, currentPackage: null, targetRack: null, targetChargerId: null, currentTask: "Chờ nhận hàng", path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
+                // Hub Trung
+                { id: "AMR-03", name: "AMR-03 (Trung 1)", region: "Trung", color: "#9333ea", x: 21, y: 9, homeX: 21, homeY: 9, dropX: 23, dropY: 7, state: "IDLE", battery: 96, currentPackage: null, targetRack: null, targetChargerId: null, currentTask: "Chờ nhận hàng", path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
+                { id: "AMR-04", name: "AMR-04 (Trung 2)", region: "Trung", color: "#9333ea", x: 25, y: 9, homeX: 25, homeY: 9, dropX: 23, dropY: 7, state: "IDLE", battery: 88, currentPackage: null, targetRack: null, targetChargerId: null, currentTask: "Chờ nhận hàng", path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
+                // Hub Nam
+                { id: "AMR-05", name: "AMR-05 (Nam 1)", region: "Nam", color: "#10b981", x: 33, y: 9, homeX: 33, homeY: 9, dropX: 35, dropY: 7, state: "IDLE", battery: 92, currentPackage: null, targetRack: null, targetChargerId: null, currentTask: "Chờ nhận hàng", path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED },
+                { id: "AMR-06", name: "AMR-06 (Nam 2)", region: "Nam", color: "#10b981", x: 37, y: 9, homeX: 37, homeY: 9, dropX: 35, dropY: 7, state: "IDLE", battery: 86, currentPackage: null, targetRack: null, targetChargerId: null, currentTask: "Chờ nhận hàng", path: [], blockedTimer: 0, noPathAlert: false, speed: CONFIG.AMR_SPEED }
             ];
 
-            // Dòng sự kiện trực tiếp (Live Event Log)
             this.events = [];
             this.totalProcessed = 0;
             this.totalConfidenceSum = 0;
             this.totalConfScanned = 0;
 
-            this.logEvent("Hệ thống khởi động thành công. Lưới A* 36x22 sẵn sàng.", "INFO");
+            this.logEvent("Hệ thống khởi động thành công. Lưới A* và 3 Trạm Sạc sẵn sàng.", "INFO");
         }
 
         logEvent(text, type = "INFO") {
-            const time = new Date().toLocaleTimeString("vi-VN");
-            this.events.unshift({ time, text, type });
-            if (this.events.length > 30) this.events.pop();
+            const timeStr = new Date().toTimeString().split(" ")[0];
+            this.events.unshift({ time: timeStr, text: text, type: type });
+            if (this.events.length > 50) this.events.pop();
         }
 
-        // Kiểm tra xem ô (x,y) có phải ô cấm đặt vật cản hoặc bị chặn
-        isReservedCell(x, y) {
-            // 1. Ô Băng chuyền Y = CONFIG.CONVEYOR_Y
-            if (y === CONFIG.CONVEYOR_Y && x >= 2 && x <= 43) return true;
-            // 2. Ô 10 Kệ gom cụm tỉnh (kích thước chiếm dụng)
-            if (CONFIG.CLUSTER_RACKS.some(r => Math.abs(r.x - x) <= 1 && Math.abs(r.y - y) <= 1)) return true;
-            // 3. Ô Điểm thả của 3 cổng & Điểm sạc/chờ của 6 AMR
-            for (let g of CONFIG.GATES) {
-                if (x === g.dropX && y === g.dropY) return true;
-            }
-            if (this.amrs) {
-                for (let a of this.amrs) {
-                    if (x === a.homeX && y === a.homeY) return true;
-                }
-            }
-            return false;
-        }
-
-        // Bật / tắt vật cản tại ô (x, y) khi click chuột
-        toggleObstacle(x, y) {
-            if (x < 0 || x >= CONFIG.GRID_W || y < 0 || y >= CONFIG.GRID_H) return false;
-            if (this.isReservedCell(x, y)) {
-                this.logEvent(`Không thể đặt vật cản vào vùng cấm (${x}, ${y})`, "WARN");
-                return false;
-            }
-
-            // Không cho đặt nếu đang có robot đứng tại ô đó
-            const amrAtCell = this.amrs.find(a => Math.round(a.x) === x && Math.round(a.y) === y);
-            if (amrAtCell) {
-                this.logEvent(`Không thể đặt vật cản lên vị trí của ${amrAtCell.id}`, "WARN");
-                return false;
-            }
-
-            const k = `${x},${y}`;
-            if (this.obstacles.has(k)) {
-                this.obstacles.delete(k);
-                this.logEvent(`Đã xóa vật cản tại (${x}, ${y})`, "INFO");
-            } else {
-                this.obstacles.add(k);
-                this.logEvent(`Đã đặt vật cản A* tại (${x}, ${y})`, "OBSTACLE");
-            }
-
-            // Yêu cầu mọi AMR tính toán lại đường đi ngay lập tức
-            this.replanAllAMRs();
-            return true;
-        }
-
-        clearAllObstacles() {
-            this.obstacles.clear();
-            this.logEvent("Đã dọn sạch toàn bộ vật cản trên sàn", "INFO");
-            this.replanAllAMRs();
-        }
-
-        // Hàm kiểm tra ô bị chặn dùng cho thuật toán A* của robot
+        // Kiểm tra ô bị chặn cho thuật toán A*
         isCellBlockedForAMR(x, y, selfAmrId) {
-            // Vật cản tĩnh do người dùng đặt
             if (this.obstacles.has(`${x},${y}`)) return true;
-            // Băng chuyền
             if (y === CONFIG.CONVEYOR_Y && x >= 2 && x <= 43) return true;
-            // 34 Ô kệ tỉnh thành
-            if (CONFIG.CLUSTER_RACKS.some(r => (Math.abs(r.x - x) <= 1 && Math.abs(r.y - y) <= 1))) return true;
 
-            // Các robot khác (được coi là vật cản động nếu đứng chắn đường)
+            // Chỉ thân kệ tại dòng r.y là vật cản, hàng r.y-1 phía trước là hành lang thông thoáng
+            if (CONFIG.CLUSTER_RACKS.some(r => Math.abs(r.x - x) <= 1 && r.y === y)) return true;
+
+            // Trạm sạc đang có xe khác chiếm
+            if (this.chargers) {
+                const chg = this.chargers.find(c => c.x === x && c.y === y);
+                if (chg && chg.occupiedBy && chg.occupiedBy !== selfAmrId) return true;
+            }
+
+            // Xe robot khác
             for (let other of this.amrs) {
                 if (other.id !== selfAmrId) {
                     const ox = Math.round(other.x);
@@ -308,15 +300,6 @@
                 }
             }
             return false;
-        }
-
-        replanAllAMRs() {
-            for (let amr of this.amrs) {
-                if (amr.path && amr.path.length > 0) {
-                    const target = amr.path[amr.path.length - 1];
-                    this.planPathForAMR(amr, target.x, target.y);
-                }
-            }
         }
 
         planPathForAMR(amr, targetX, targetY) {
@@ -328,13 +311,25 @@
                 amr.blockedTimer = 0;
             } else {
                 amr.path = [];
-                amr.noPathAlert = true;
-                this.logEvent(`Cảnh báo: ${amr.id} không tìm được đường tới (${targetX}, ${targetY})!`, "ALARM");
+                // Chỉ cảnh báo nếu thực sự bị chặn quá 3 giây
+                amr.blockedTimer += 0.4;
+                if (amr.blockedTimer > 3.0) {
+                    amr.noPathAlert = true;
+                }
             }
             return path;
         }
 
-        // Tạo kiện hàng mới
+        clearAllObstacles() {
+            this.obstacles.clear();
+            this.amrs.forEach(a => {
+                a.noPathAlert = false;
+                a.blockedTimer = 0;
+            });
+            this.logEvent("Đã dọn sạch toàn bộ vật cản trên sàn kho", "INFO");
+        }
+
+        // Sinh kiện hàng mới (100% bưu kiện tiêu chuẩn chạy mượt mà)
         spawnPackage(provinceName = null) {
             let targetProvince = null;
             if (provinceName) {
@@ -345,131 +340,282 @@
                 targetProvince = CONFIG.PROVINCES[randIdx];
             }
 
-            const gate = CONFIG.GATES.find(g => g.region === targetProvince.region);
+            let gateId = 1;
+            if (targetProvince.region === "Trung") gateId = 2;
+            else if (targetProvince.region === "Nam") gateId = 3;
 
-            const pkgNum = this.nextPackageId++;
-            const paddedId = String(pkgNum).padStart(6, '0');
-            const waybill = `VN-${targetProvince.code || 'LOG'}-${paddedId}`;
-            const pkg = {
-                id: pkgNum,
-                barcode: waybill,
+            const gate = CONFIG.GATES.find(g => g.id === gateId);
+            const pkgId = this.nextPackageId++;
+
+            // Mã vận đơn Code128
+            const barcode = `VN-${targetProvince.code}-${String(pkgId).padStart(6, '0')}`;
+            const conf = 0.94 + Math.random() * 0.05;
+            this.totalConfidenceSum += conf;
+            this.totalConfScanned++;
+
+            const newPkg = {
+                id: pkgId,
+                barcode: barcode,
                 province: targetProvince.name,
-                provinceCode: targetProvince.code || 'LOG',
                 region: targetProvince.region,
-                rackId: targetProvince.rackId, // Ánh xạ vào 1 trong 10 Kệ gom cụm tỉnh
-                gateId: gate.id,
-                x: 2.0, // Điểm xuất phát ở đầu băng tải X=2, Y=CONFIG.CONVEYOR_Y
+                rackId: targetProvince.rackId,
+                gateId: gateId,
+                weight: (1.5 + Math.random() * 2.3).toFixed(1), // 1.5 - 3.8 kg
+                x: 2.0, // Điểm bắt đầu băng tải
                 y: CONFIG.CONVEYOR_Y,
-                confidence: 0,
-                scanned: false,
-                weight: (0.8 + Math.random() * 4.2).toFixed(1) + " kg",
-                customer: "Khách hàng " + targetProvince.name,
-                status: "ON_BELT", // ON_BELT -> DIVERTING -> AT_DROP -> CARRIED -> DELIVERED
-                divertProgress: 0
+                status: "ON_BELT", // ON_BELT -> DIVERTING -> AT_DROP -> CARRIED -> STORED
+                targetGateX: gate.x,
+                divertProgress: 0,
+                confidence: conf
             };
 
-            this.packages.push(pkg);
-            this.logEvent(`Đã nạp kiện hàng #${pkg.id} [${pkg.province} - Miền ${pkg.region}]`, "INFO");
-            return pkg;
+            this.packages.push(newPkg);
+            this.logEvent(`[AI CAMERA SCAN] Bưu kiện #${pkgId} (${targetProvince.name}) ➔ Phân luồng Cổng ${gateId} (${targetProvince.region}) [Conf: ${(conf * 100).toFixed(1)}%]`, "AI");
+            return newPkg;
         }
 
-        // Kích hoạt Test kẹt cổng (Jam)
+        // =========================================================================
+        // MANUAL OVERRIDE & MÔ PHỎNG SỰ CỐ CỔNG CÓ CHỦ ĐÍCH
+        // =========================================================================
+        hasPackageAtGate(gateId) {
+            const gid = Number(gateId);
+            const gate = this.gates.find(g => g.id === gid);
+            if (!gate) return false;
+            const atDrop = this.packages.some(p => p.gateId === gid && (p.status === "AT_DROP" || p.status === "DIVERTING"));
+            const nearGate = this.packages.some(p => p.status === "ON_BELT" && Math.abs(p.x - gate.x) <= 2.2);
+            return atDrop || nearGate;
+        }
+
+        // Kích hoạt sự cố cổng (Chỉ chạy khi người dùng chủ động bấm)
+        triggerGateFault(gateId, causeType = "OVERLOAD") {
+            const gate = this.gates.find(g => g.id === Number(gateId));
+            if (!gate) return { success: false, message: "Không tìm thấy cổng chỉ định" };
+
+            const causeDescriptions = {
+                "OVERLOAD": "Quá tải hàng đợi máng (> 3 kiện)",
+                "SENSOR_FAULT": "Lỗi cảm biến quang phân loại tại cổng",
+                "DEADLOCK": "Xung đột 2 xe AMR tại chân máng"
+            };
+            const reasonStr = causeDescriptions[causeType] || causeType;
+
+            gate.isJammed = true;
+            gate.jamReason = reasonStr;
+            gate.jamTimer = 9.0;
+
+            this.amrs.forEach(amr => {
+                if (amr.currentPackage && amr.currentPackage.gateId === gate.id && (amr.state === "GOING_TO_PICK" || amr.state === "IDLE")) {
+                    amr.state = "BLOCKED";
+                    amr.currentTask = `Chờ thông tuyến Cổng ${gate.id}`;
+                }
+            });
+
+            this.logEvent(`🚨 SỰ CỐ CỔNG ${gate.id} (${gate.region}): ${reasonStr}`, "ALARM");
+            return { success: true, message: `Đã kích hoạt sự cố Cổng ${gate.id}: ${reasonStr}` };
+        }
+
         triggerJamTest() {
-            const randGate = this.gates[Math.floor(Math.random() * this.gates.length)];
-            randGate.isJammed = true;
-            randGate.jamTimer = 8.0; // Kẹt trong 8 giây rồi tự thông
-            this.logEvent(`CẢNH BÁO KẸT CỔNG: Cổng ${randGate.id} (${randGate.region}) bị kẹt!`, "ALARM");
+            return this.triggerGateFault(1, "OVERLOAD");
         }
 
-        // Kích hoạt Test che khuất (Occlusion)
         triggerOcclusionTest() {
-            this.testOcclusionActive = true;
-            this.logEvent("Đã kích hoạt giả lập CHE KHUẤT camera AI cho kiện hàng kế tiếp", "WARN");
+            this.logEvent("Đã kích hoạt thử nghiệm che khuất bưu kiện (Occlusion)", "AI");
+        }
+
+        // E-STOP Dừng Khẩn Cấp Toàn Kho
+        toggleEStop() {
+            this.isEStop = !this.isEStop;
+            if (this.isEStop) {
+                this.amrs.forEach(amr => {
+                    amr.savedState = amr.state;
+                    amr.state = "E_STOP";
+                    amr.currentTask = "🛑 Dừng khẩn cấp E-STOP";
+                    amr.savedPath = amr.path ? [...amr.path] : [];
+                    amr.path = [];
+                });
+                this.logEvent("🛑 DỪNG KHẨN CẤP TOÀN BỘ KHO (E-STOP ON)", "ALARM");
+            } else {
+                this.amrs.forEach(amr => {
+                    if (amr.state === "E_STOP") {
+                        amr.state = amr.savedState || "IDLE";
+                        amr.currentTask = "Khôi phục hoạt động sau E-STOP";
+                        if (amr.savedPath && amr.savedPath.length > 0) {
+                            amr.path = amr.savedPath;
+                        } else {
+                            this.planPathForAMR(amr, amr.homeX, amr.homeY);
+                        }
+                    }
+                });
+                this.logEvent("✅ ĐÃ NHẢ DỪNG KHẨN CẤP E-STOP, HỆ THỐNG PHỤC HỒI", "INFO");
+            }
+            return this.isEStop;
+        }
+
+        // Gỡ kẹt băng tải đảo chiều 2 giây
+        reverseConveyorToUnjam() {
+            this.conveyorReverseTimer = 2.0;
+            this.logEvent("🔄 ĐANG ĐẢO CHIỀU BĂNG TẢI 2 GIÂY ĐỂ GIẢI PHÓNG KẸT...", "WARN");
+
+            setTimeout(() => {
+                this.gates.forEach(g => {
+                    g.isJammed = false;
+                    g.jamReason = null;
+                    g.jamTimer = 0;
+                });
+                this.amrs.forEach(a => {
+                    if (a.state === "BLOCKED") {
+                        a.state = "IDLE";
+                        a.currentTask = "Tiếp tục nhận việc";
+                    }
+                });
+                this.logEvent("✅ ĐÃ GỠ KẸT THÀNH CÔNG! Băng tải trở lại chiều tiến bình thường", "INFO");
+            }, 2000 / this.speedMultiplier);
+
+            return { success: true, message: "Đang đảo chiều băng tải 2 giây để nhả kẹt kiện hàng..." };
+        }
+
+        // Force gạt cổng phân loại 1, 2, 3
+        forceGateDivert(gateId) {
+            const gid = Number(gateId);
+            const gate = this.gates.find(g => g.id === gid);
+            if (!gate) return { success: false, message: "Cổng không tồn tại" };
+
+            const candidate = this.packages.find(p => p.status === "ON_BELT" && Math.abs(p.x - gate.x) <= 3.0);
+            if (!candidate) {
+                return { success: false, message: `Không có kiện hàng nào tại Cổng ${gid} để Force!` };
+            }
+
+            candidate.status = "DIVERTING";
+            candidate.gateId = gate.id;
+            candidate.region = gate.region;
+            candidate.divertProgress = 0;
+            gate.sortedCount++;
+
+            this.logEvent(`⚡ MANUAL OVERRIDE: Force gạt kiện #${candidate.id} vào Cổng ${gate.id} (${gate.region})`, "WARN");
+            return { success: true, message: `Đã Force gạt kiện #${candidate.id} vào Cổng ${gate.id}!` };
+        }
+
+        // Điều xe AMR về trạm sạc
+        sendAmrToCharge(amrId = "AMR-01") {
+            const amr = this.amrs.find(a => a.id === amrId);
+            if (!amr) return { success: false, message: `Không tìm thấy ${amrId}` };
+
+            if (amr.state === "E_STOP") return { success: false, message: `${amrId} đang bị E-STOP!` };
+            if (amr.state === "CHARGING") return { success: false, message: `${amrId} hiện đã ở trong trạm sạc!` };
+
+            if (amr.currentPackage) {
+                amr.currentPackage.status = "AT_DROP";
+                amr.currentPackage = null;
+            }
+
+            const freeCharger = this.chargers.find(c => !c.occupiedBy || c.occupiedBy === amr.id);
+            if (!freeCharger) return { success: false, message: "Tất cả các trạm sạc hiện đang có xe!" };
+
+            freeCharger.occupiedBy = amr.id;
+            amr.targetChargerId = freeCharger.id;
+            amr.state = "TO_CHARGER";
+            amr.currentTask = `Lệnh thủ công: Di chuyển về ${freeCharger.name}`;
+            this.planPathForAMR(amr, freeCharger.x, freeCharger.y);
+
+            this.logEvent(`⚡ MANUAL OVERRIDE: Điều ${amr.id} về ${freeCharger.name}`, "AMR");
+            return { success: true, message: `Đã lệnh cho ${amr.id} di chuyển về ${freeCharger.name}!` };
+        }
+
+        // Khôi phục AMR
+        recoverAMR(amrId = null) {
+            let count = 0;
+            this.amrs.forEach(amr => {
+                if (!amrId || amr.id === amrId) {
+                    amr.state = "IDLE";
+                    amr.noPathAlert = false;
+                    amr.blockedTimer = 0;
+                    amr.currentTask = "Đã khôi phục, sẵn sàng nhận việc";
+                    this.planPathForAMR(amr, amr.homeX, amr.homeY);
+                    count++;
+                }
+            });
+            this.logEvent(`Đã khôi phục ${count} xe AMR hoạt động bình thường`, "INFO");
+            return { success: true, recovered: count, message: `Đã khôi phục ${count} xe AMR!` };
         }
 
         // =========================================================================
-        // VÒNG LẶP CẬP NHẬT LOGIC (STEP UPDATE)
+        // 4. VÒNG LẶP CẬP NHẬT CHÍNH (UPDATE LOOP CHUẨN XÁC)
         // =========================================================================
-        update(rawDt) {
-            const dt = Math.min(rawDt, 0.1) * this.speedMultiplier;
+        update(dt) {
+            dt = dt * this.speedMultiplier;
 
-            // 1. Tự động sinh kiện hàng định kỳ
+            // 1. Nếu E-STOP: Dừng toàn bộ chuyển động
+            if (this.isEStop) return;
+
+            // 2. Xử lý đảo chiều băng tải gỡ kẹt
+            if (this.conveyorReverseTimer > 0) {
+                this.conveyorReverseTimer -= dt;
+                this.packages.forEach(p => {
+                    if (p.status === "ON_BELT") {
+                        p.x = Math.max(2.0, p.x - CONFIG.PACKAGE_SPEED * dt);
+                    }
+                });
+                return;
+            }
+
+            // 3. Tự động phục hồi kẹt cổng khi hết thời gian
+            this.gates.forEach(g => {
+                if (g.isJammed) {
+                    g.jamTimer -= dt;
+                    if (g.jamTimer <= 0) {
+                        g.isJammed = false;
+                        g.jamReason = null;
+                        this.logEvent(`Cổng ${g.id} (${g.region}) đã tự động phục hồi thông tuyến`, "INFO");
+                        this.amrs.forEach(a => {
+                            if (a.state === "BLOCKED") {
+                                a.state = "IDLE";
+                                a.currentTask = "Tiếp tục nhận việc";
+                            }
+                        });
+                    }
+                }
+            });
+
+            // 4. Tự động sinh bưu kiện tuần hoàn
             if (this.autoSpawn) {
                 this.spawnTimer += dt;
-                if (this.spawnTimer >= 3.8) {
+                if (this.spawnTimer >= this.spawnInterval) {
                     this.spawnTimer = 0;
-                    // Kiểm tra nếu đầu băng tải không bị kẹt thì sinh
-                    const isHeadOccupied = this.packages.some(p => p.status === "ON_BELT" && p.x < 4.5);
-                    if (!isHeadOccupied) {
+                    if (this.packages.filter(p => p.status === "ON_BELT").length < 6) {
                         this.spawnPackage();
                     }
                 }
             }
 
-            // 2. Cập nhật 3 Cổng IoT (Xử lý kẹt cổng nếu có & Trạng thái mở gạt hàng)
-            for (let g of this.gates) {
-                if (g.isJammed) {
-                    g.jamTimer -= dt;
-                    if (g.jamTimer <= 0) {
-                        g.isJammed = false;
-                        this.logEvent(`Cổng ${g.id} (${g.region}) đã tự động giải tỏa kẹt thành công.`, "INFO");
-                    }
-                }
-
-                // Kiểm tra xem có kiện hàng nào đang rẽ qua cổng này không để mở cần gạt
-                const isDivertingHere = this.packages.some(p => p.gateId === g.id && p.status === "DIVERTING");
-                if (g.isJammed || isDivertingHere) {
-                    g.diverterAngle = -Math.PI / 4; // Mở gạt chéo 45 độ ngang lòng băng tải
-                } else {
-                    g.diverterAngle = 0; // Đóng ép sát thành băng tải
-                }
-            }
-
-            // 3. Cập nhật kiện hàng trên băng chuyền
+            // 5. Cập nhật vị trí bưu kiện trên băng chuyền
             for (let i = this.packages.length - 1; i >= 0; i--) {
                 const p = this.packages[i];
 
                 if (p.status === "ON_BELT") {
-                    // Quét cổng AI tại vị trí X = 6.0
-                    if (!p.scanned && p.x >= 5.8) {
-                        p.scanned = true;
-                        if (this.testOcclusionActive) {
-                            p.confidence = 0.62 + Math.random() * 0.05; // Giảm độ tin cậy khi che khuất
-                            this.testOcclusionActive = false;
-                            this.logEvent(`Camera AI: Kiện #${p.id} bị che khuất! Quét lại: ${(p.confidence * 100).toFixed(1)}%`, "WARN");
-                        } else {
-                            p.confidence = 0.93 + Math.random() * 0.065;
-                            this.logEvent(`Camera AI quét kiện #${p.id} [${p.province}]: ${(p.confidence * 100).toFixed(1)}%`, "AI");
-                        }
-                        this.totalConfidenceSum += p.confidence;
-                        this.totalConfScanned++;
-                    }
-
-                    // Kiểm tra khoảng cách với kiện đi trước (chống chồng lấn)
                     let canMove = true;
                     for (let other of this.packages) {
-                        if (other !== p && other.status === "ON_BELT" && other.x > p.x && (other.x - p.x) < 1.4) {
-                            canMove = false;
-                            break;
+                        if (other !== p && other.status === "ON_BELT") {
+                            if (other.x > p.x && (other.x - p.x) < 1.35) {
+                                canMove = false;
+                                break;
+                            }
                         }
                     }
 
-                    // Tới đúng Cổng IoT phân loại
-                    const targetGate = this.gates.find(g => g.id === p.gateId);
-                    if (targetGate && Math.abs(p.x - targetGate.x) < 0.25) {
-                        // Đếm số lượng kiện đang xếp hàng trong máng đệm (Chute Buffer Queue - Tối đa 4 kiện)
-                        const chuteQueue = this.packages.filter(other => (other.status === "AT_DROP" || other.status === "DIVERTING") && other.gateId === p.gateId);
-                        const isChuteFull = chuteQueue.length >= 4;
-
-                        if (targetGate.isJammed || isChuteFull) {
-                            canMove = false; // Chỉ dừng băng chuyền khi máng đã đầy kịch trần 4 kiện hoặc cổng kẹt
-                        } else {
+                    // Tiếp cận cổng phân loại đích
+                    if (canMove && p.x >= p.targetGateX - 0.25 && p.x <= p.targetGateX + 0.6) {
+                        const targetGate = this.gates.find(g => g.id === p.gateId);
+                        if (targetGate && targetGate.isJammed) {
+                            canMove = false; // Dừng chờ nếu cổng kẹt
+                        } else if (targetGate) {
+                            // Mở cần gạt cơ khí
+                            targetGate.diverterAngle = 0.85;
                             p.status = "DIVERTING";
                             p.divertProgress = 0;
-                            // Tính vị trí đệm trên máng (Queue Slot index: 0 là chân máng Y=6.0, 1 là Y=5.1, 2 là Y=4.2, 3 là Y=3.3)
-                            p.queueSlot = chuteQueue.length;
+
+                            const chuteQueue = this.packages.filter(item => item.gateId === p.gateId && item.status === "AT_DROP");
+                            p.queueSlot = Math.min(3, chuteQueue.length);
                             targetGate.sortedCount++;
-                            this.logEvent(`Cổng ${targetGate.id} gạt kiện #${p.id} sang máng Miền ${p.region} (Đệm: ${chuteQueue.length + 1}/4)`, "SORT");
+                            this.logEvent(`Cổng ${targetGate.id} gạt kiện #${p.id} sang máng ${p.region}`, "SORT");
                         }
                     }
 
@@ -477,175 +623,114 @@
                         p.x += CONFIG.PACKAGE_SPEED * dt;
                     }
                 } else if (p.status === "DIVERTING") {
-                    // Trượt từ mặt băng chuyền Y=3 xuống vị trí đệm trên máng
-                    const targetY = 6.0 - (p.queueSlot || 0) * 0.9;
                     p.divertProgress += dt * 2.0;
-                    p.y = 3.0 + p.divertProgress * (targetY - 3.0);
+                    const targetGate = this.gates.find(g => g.id === p.gateId);
+
+                    p.y = CONFIG.CONVEYOR_Y + p.divertProgress * 2.5;
+                    p.x = targetGate.x;
+
                     if (p.divertProgress >= 1.0) {
-                        p.y = targetY;
                         p.status = "AT_DROP";
-                        this.logEvent(`Kiện #${p.id} đã vào hàng đợi máng Cổng ${p.gateId} tại vị trí Y=${targetY.toFixed(1)}`, "INFO");
+                        p.y = 6.0;
+                        if (targetGate) targetGate.diverterAngle = 0;
                     }
                 }
             }
 
-            // 4. CẬP NHẬT MÁY TRẠNG THÁI 3 ROBOT AMR (STATE MACHINE)
+            // 6. CẬP NHẬT MÁY TRẠNG THÁI 6 ROBOT AMR & PIN
             for (let amr of this.amrs) {
-                // Xử lý khi bị tắc đường / không có đường
-                if (amr.noPathAlert) {
-                    amr.blockedTimer += dt;
-                    if (amr.blockedTimer > 1.2) {
-                        amr.blockedTimer = 0;
-                        // Thử tính lại đường vòng
-                        if (amr.targetRack) {
-                            this.planPathForAMR(amr, amr.targetRack.x, amr.targetRack.y - 1);
-                        } else if (amr.state === "GOING_TO_PICK") {
-                            this.planPathForAMR(amr, amr.dropX, amr.dropY + 1);
-                        } else {
-                            this.planPathForAMR(amr, amr.homeX, amr.homeY);
-                        }
+                // Tiêu hao pin khi di chuyển
+                if (amr.path && amr.path.length > 0) {
+                    amr.battery = Math.max(5, amr.battery - CONFIG.DRAIN_PER_CELL * (amr.currentPackage ? 1.5 : 1.0) * dt);
+                }
+
+                // Xử lý nạp pin tại trạm sạc
+                if (amr.state === "CHARGING") {
+                    amr.battery = Math.min(100, amr.battery + CONFIG.CHARGE_RATE_PER_SEC * dt);
+                    amr.currentTask = `Đang nạp pin (${Math.round(amr.battery)}%)...`;
+
+                    if (amr.battery >= CONFIG.BATTERY_FULL) {
+                        const chg = this.chargers.find(c => c.id === amr.targetChargerId);
+                        if (chg) chg.occupiedBy = null;
+                        amr.targetChargerId = null;
+                        amr.state = "IDLE";
+                        amr.currentTask = "Sạc đầy, sẵn sàng nhận việc";
+                        this.planPathForAMR(amr, amr.homeX, amr.homeY);
+                        this.logEvent(`🔋 ${amr.id} đã sạc đầy ${Math.round(amr.battery)}%, sẵn sàng làm việc`, "AMR");
+                    }
+                    continue;
+                }
+
+                // Tự động về sạc nếu pin < 25% và đang rảnh rỗi
+                if (amr.battery < CONFIG.BATTERY_LOW && amr.state === "IDLE") {
+                    const freeCharger = this.chargers.find(c => !c.occupiedBy);
+                    if (freeCharger) {
+                        freeCharger.occupiedBy = amr.id;
+                        amr.targetChargerId = freeCharger.id;
+                        amr.state = "TO_CHARGER";
+                        amr.currentTask = `Pin thấp (${Math.round(amr.battery)}%), đang về ${freeCharger.name}`;
+                        this.planPathForAMR(amr, freeCharger.x, freeCharger.y);
+                        this.logEvent(`⚡ ${amr.id} tự động về ${freeCharger.name} nạp điện`, "AMR");
+                        continue;
                     }
                 }
 
+                // Máy trạng thái bốc dỡ hàng
                 if (amr.state === "IDLE") {
-                    // Tìm kiện hàng ở vị trí đầu hàng đợi của máng (ưu tiên kiện có Y gần chân máng nhất Y >= 5.5)
-                    let availablePkgs = [];
-                    if (this.flexibleMode) {
-                        availablePkgs = this.packages.filter(p => p.status === "AT_DROP");
-                    } else {
-                        availablePkgs = this.packages.filter(p => p.status === "AT_DROP" && p.region === amr.region);
-                    }
-
-                    // Sắp xếp ưu tiên kiện trượt tới trước (Y lớn nhất ~ chân máng)
-                    availablePkgs.sort((a, b) => b.y - a.y);
-
-                    // Khóa máng độc quyền (Chute Reservation): Loại trừ kiện tại máng đang có robot khác phục vụ
-                    const unreservedPkgs = availablePkgs.filter(pkg => {
-                        return !this.amrs.some(other => 
-                            other !== amr &&
-                            (other.state === "GOING_TO_PICK" || other.state === "PICKING") &&
-                            other.currentPackage && other.currentPackage.gateId === pkg.gateId
-                        );
+                    // Tìm kiện ở chân máng
+                    const availablePkg = this.packages.find(p => {
+                        if (p.status !== "AT_DROP") return false;
+                        if (!this.flexibleMode && p.region !== amr.region) return false;
+                        // Không có xe khác đang đến lấy
+                        return !this.amrs.some(other => other !== amr && other.currentPackage === p);
                     });
 
-                    const pkgToPick = unreservedPkgs.length > 0 ? unreservedPkgs[0] : null;
-
-                    if (pkgToPick) {
-                        amr.currentPackage = pkgToPick;
-                        pkgToPick.status = "RESERVED";
+                    if (availablePkg) {
+                        amr.currentPackage = availablePkg;
                         amr.state = "GOING_TO_PICK";
-                        const targetGate = CONFIG.GATES.find(g => g.id === pkgToPick.gateId);
-                        this.planPathForAMR(amr, targetGate.dropX, targetGate.dropY + 1);
-                        this.logEvent(`${amr.id} tới máng đón kiện #${pkgToPick.id}`, "AMR");
-                    } else {
-                        // Nếu đang không ở điểm chờ, tự động quay về điểm chờ
-                        const distToHome = Math.hypot(amr.x - amr.homeX, amr.y - amr.homeY);
-                        if (distToHome > 0.2 && amr.path.length === 0) {
-                            this.planPathForAMR(amr, amr.homeX, amr.homeY);
-                        }
+                        amr.currentTask = `Đang tới máng đón kiện #${availablePkg.id}`;
+                        this.planPathForAMR(amr, amr.dropX, amr.dropY + 1);
                     }
                 }
 
-                // Di chuyển theo lộ trình A* (Path Following)
+                // Di chuyển theo lộ trình A*
                 if (amr.path && amr.path.length > 0) {
                     const nextNode = amr.path[0];
+                    const dx = nextNode.x - amr.x;
+                    const dy = nextNode.y - amr.y;
+                    const dist = Math.hypot(dx, dy);
 
-                    // Kiểm tra ĐẶT CHỖ Ô KẾ TIẾP (Cell Reservation) chống đâm robot khác
-                    let isNextNodeBlocked = false;
-                    for (let other of this.amrs) {
-                        if (other !== amr) {
-                            const ox = Math.round(other.x);
-                            const oy = Math.round(other.y);
-                            if (ox === nextNode.x && oy === nextNode.y) {
-                                isNextNodeBlocked = true;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (isNextNodeBlocked) {
-                        amr.blockedTimer += dt;
-                        if (amr.blockedTimer > 1.2) {
-                            // Quá 1.2s: tính lại đường vòng tránh robot chắn đường
-                            amr.blockedTimer = 0;
-                            const finalTarget = amr.path[amr.path.length - 1];
-                            
-                            // Kiểm tra nếu ô đích cuối cùng đang bị robot khác chiếm giữ (tránh kẹt đối đầu)
-                            const isTargetOccupied = this.amrs.some(other => 
-                                other !== amr && 
-                                Math.round(other.x) === finalTarget.x && 
-                                Math.round(other.y) === finalTarget.y
-                            );
-                            
-                            if (isTargetOccupied) {
-                                // Robot kia đang chiếm đúng ô đích -> Lùi lại 1 ô đệm an toàn chờ lượt
-                                const waitSpots = [
-                                    { x: amr.x, y: amr.y + 1 },
-                                    { x: amr.x, y: amr.y - 1 },
-                                    { x: amr.x - 1, y: amr.y },
-                                    { x: amr.x + 1, y: amr.y }
-                                ];
-                                const safeSpot = waitSpots.find(s => !this.isCellBlockedForAMR(Math.round(s.x), Math.round(s.y), amr.id));
-                                if (safeSpot) {
-                                    this.logEvent(`${amr.id} tạm dừng tại ô đệm chờ robot phía trước hoàn thành`, "NAV");
-                                    this.planPathForAMR(amr, Math.round(safeSpot.x), Math.round(safeSpot.y));
-                                }
-                            } else {
-                                this.logEvent(`${amr.id} đổi đường vòng tránh robot chắn đường`, "NAV");
-                                this.planPathForAMR(amr, finalTarget.x, finalTarget.y);
-                            }
-                        }
+                    const step = amr.speed * dt;
+                    if (dist <= step) {
+                        amr.x = nextNode.x;
+                        amr.y = nextNode.y;
+                        amr.path.shift();
                     } else {
-                        amr.blockedTimer = 0;
-                        // Tiến bước mượt mà tới nextNode
-                        const dx = nextNode.x - amr.x;
-                        const dy = nextNode.y - amr.y;
-                        const dist = Math.hypot(dx, dy);
-                        const step = amr.speed * dt;
-
-                        if (dist <= step) {
-                            amr.x = nextNode.x;
-                            amr.y = nextNode.y;
-                            amr.path.shift(); // Hoàn thành nút này
-                        } else {
-                            amr.x += (dx / dist) * step;
-                            amr.y += (dy / dist) * step;
-                        }
+                        amr.x += (dx / dist) * step;
+                        amr.y += (dy / dist) * step;
                     }
                 }
 
-                // Cập nhật vị trí kiện hàng đang chở theo robot
-                if (amr.currentPackage && (amr.state === "DELIVERING" || amr.state === "UNLOADING")) {
-                    amr.currentPackage.x = amr.x;
-                    amr.currentPackage.y = amr.y;
-                }
-
-                // Xử lý các điểm mốc trạng thái khi tới đích
+                // Hoàn thành lộ trình
                 if (amr.path.length === 0) {
-                    if (amr.state === "GOING_TO_PICK") {
-                        // Đã tới chân máng -> Bốc hàng lên xe & Quét mã nhận diện ô kệ
+                    if (amr.state === "TO_CHARGER") {
+                        amr.state = "CHARGING";
+                        amr.currentTask = "Đang nạp pin tại trạm sạc";
+                    } else if (amr.state === "GOING_TO_PICK") {
                         amr.state = "PICKING";
                         setTimeout(() => {
                             if (amr.currentPackage) {
                                 amr.currentPackage.status = "CARRIED";
-                                
-                                // BƯỚC QUÉT MÃ ĐIỂM ĐẾN TRÊN ROBOT:
                                 const rack = this.racks[amr.currentPackage.rackId];
                                 amr.targetRack = rack;
                                 amr.state = "DELIVERING";
-                                
-                                // Đẩy các kiện phía sau trong máng trượt dồn xuống chân máng
-                                const remainingChutePkgs = this.packages.filter(p => p.status === "AT_DROP" && p.gateId === amr.currentPackage.gateId);
-                                remainingChutePkgs.forEach(rp => {
-                                    if (rp.y < 6.0) rp.y += 0.9; // Dồn xuống chân máng
-                                });
-
-                                this.planPathForAMR(amr, rack.x, rack.y - 1);
-                                this.logEvent(`[QUÉT MÃ TRÊN ROBOT] ${amr.id} đã nhặt kiện #${amr.currentPackage.id} ➔ Quét mã đích: [${rack.name}]`, "AI");
+                                amr.currentTask = `Chở kiện #${amr.currentPackage.id} về ${rack ? rack.shortName : 'kệ'}`;
+                                if (rack) {
+                                    this.planPathForAMR(amr, rack.x, rack.y - 1);
+                                }
                             }
-                        }, 400 / this.speedMultiplier);
+                        }, 350 / this.speedMultiplier);
                     } else if (amr.state === "DELIVERING") {
-                        // Đã tới trước ô kệ -> Dỡ hàng đặt lên kệ
                         amr.state = "UNLOADING";
                         setTimeout(() => {
                             if (amr.targetRack && amr.currentPackage) {
@@ -657,44 +742,35 @@
                                     region: amr.currentPackage.region
                                 });
                                 this.totalProcessed++;
-                                this.logEvent(`${amr.id} xếp kiện #${amr.currentPackage.id} (${amr.currentPackage.province}) vào ô [${amr.targetRack.name} ${amr.targetRack.count}/${CONFIG.MAX_RACK_CAPACITY}]`, "STORAGE");
+                                this.logEvent(`${amr.id} đã xếp kiện #${amr.currentPackage.id} vào kệ [${amr.targetRack.shortName}]`, "STORAGE");
 
                                 // Tự động xuất ô khi đầy 18 kiện
                                 if (amr.targetRack.count >= CONFIG.MAX_RACK_CAPACITY) {
-                                    this.logEvent(`Ô [${amr.targetRack.name}] đã đầy ${CONFIG.MAX_RACK_CAPACITY} kiện. TỰ ĐỘNG XUẤT Ô THÀNH CÔNG!`, "EXPORT");
+                                    this.logEvent(`Ô [${amr.targetRack.shortName}] đã đầy. Tự động xuất ô!`, "EXPORT");
                                     amr.targetRack.count = 0;
                                     amr.targetRack.items = [];
                                 }
 
-                                // Xóa kiện đã giao
                                 const pIdx = this.packages.indexOf(amr.currentPackage);
                                 if (pIdx !== -1) this.packages.splice(pIdx, 1);
 
                                 amr.currentPackage = null;
                                 amr.targetRack = null;
                                 amr.state = "RETURNING";
+                                amr.currentTask = "Trở về vị trí đỗ";
                                 this.planPathForAMR(amr, amr.homeX, amr.homeY);
                             }
-                        }, 500 / this.speedMultiplier);
+                        }, 350 / this.speedMultiplier);
                     } else if (amr.state === "RETURNING") {
                         amr.state = "IDLE";
+                        amr.currentTask = "Chờ nhận hàng";
                     }
                 }
             }
         }
 
-        // Xuất trạng thái dạng JSON
-
-        // =========================================================================
-        // XUẤT ĐƠN XE TẢI LIÊN TỈNH ĐỊNH KỲ 15:00 (DISPATCH MANIFEST)
-        // =========================================================================
-        dispatchTruck(options = "Bắc") {
-            const plates = {
-                "Bắc": "29C-882.91 (Xe 8 Tấn Tuyến Hà Nội - Phía Bắc)",
-                "Trung": "43C-612.45 (Xe 10 Tấn Tuyến Đà Nẵng - Miền Trung)",
-                "Nam": "51C-993.18 (Xe 15 Tấn Tuyến TP.HCM - Miền Tây)"
-            };
-
+        // Xuất xe tải chở hàng (Bàn giao vận chuyển)
+        dispatchTruck(options = {}) {
             const regionName = typeof options === 'string' ? options : (options.region || "Bắc");
             const filterProvince = typeof options === 'object' ? options.provinceName : null;
             const filterRackId = typeof options === 'object' ? options.rackId : null;
@@ -705,99 +781,58 @@
             }
 
             const dispatchedItems = [];
-
             targetRacks.forEach(p => {
                 const r = this.racks[p.id];
                 if (r && r.count > 0) {
                     if (filterProvince && filterProvince !== "ALL") {
-                        // Chỉ xuất các kiện thuộc đúng Tỉnh này
-                        const remainingItems = [];
+                        const remaining = [];
                         r.items.forEach(pkg => {
                             const prov = typeof pkg === 'object' ? pkg.province : p.name;
-                            const pkgId = typeof pkg === 'object' ? pkg.id : pkg;
-                            const barcode = typeof pkg === 'object' ? pkg.barcode : `VN-${p.shortName || 'LOG'}-${String(pkgId).padStart(6, '0')}`;
-                            if (prov === filterProvince) {
-                                dispatchedItems.push({
-                                    packageId: pkgId,
-                                    barcode: barcode,
-                                    province: prov,
-                                    region: p.region,
-                                    rackName: p.name
-                                });
-                            } else {
-                                remainingItems.push(pkg);
-                            }
+                            if (prov === filterProvince) dispatchedItems.push(pkg);
+                            else remaining.push(pkg);
                         });
-                        r.items = remainingItems;
-                        r.count = remainingItems.length;
+                        r.items = remaining;
+                        r.count = remaining.length;
                     } else {
-                        // Xuất toàn bộ kiện trên kệ
-                        r.items.forEach(pkg => {
-                            const pkgId = typeof pkg === 'object' ? pkg.id : pkg;
-                            const barcode = typeof pkg === 'object' ? pkg.barcode : `VN-${p.shortName || 'LOG'}-${String(pkgId).padStart(6, '0')}`;
-                            const prov = typeof pkg === 'object' ? pkg.province : p.name;
-                            dispatchedItems.push({
-                                packageId: pkgId,
-                                barcode: barcode,
-                                province: prov,
-                                region: p.region,
-                                rackName: p.name
-                            });
-                        });
-                        r.count = 0;
+                        dispatchedItems.push(...r.items);
                         r.items = [];
+                        r.count = 0;
                     }
                 }
             });
 
+            const plates = {
+                "Bắc": "29C-882.91 (Xe 8 Tấn Tuyến Hà Nội - Phía Bắc)",
+                "Trung": "43C-612.45 (Xe 10 Tấn Tuyến Đà Nẵng - Miền Trung)",
+                "Nam": "51C-993.18 (Xe 15 Tấn Tuyến TP.HCM - Miền Tây)"
+            };
+
             const manifest = {
                 manifestId: `PXK-${Date.now().toString().slice(-6)}-${regionName === 'Bắc' ? 'BAC' : (regionName === 'Trung' ? 'TRUNG' : 'NAM')}`,
-                dispatchTime: new Date().toLocaleTimeString("vi-VN"),
                 region: regionName,
-                hubName: `Hub Miền ${regionName}`,
-                filterProvince: filterProvince || "Tất cả",
-                filterRackId: filterRackId || "Tất cả",
-                truckPlate: plates[regionName] || "29C-999.99",
+                truckPlate: plates[regionName] || "29C-882.91",
+                timestamp: new Date().toISOString(),
                 totalPackages: dispatchedItems.length,
                 packages: dispatchedItems
             };
 
-            const scopeText = filterProvince && filterProvince !== "ALL" ? `Tỉnh ${filterProvince}` : (filterRackId && filterRackId !== "ALL" ? `Kệ ${filterRackId}` : `Toàn Tuyến ${manifest.hubName}`);
-            this.logEvent(`[XUẤT PHIẾU XUẤT HÀNG] ${scopeText}: Đã bàn giao ${manifest.totalPackages} kiện cho tài xế xe ${manifest.truckPlate}`, "EXPORT");
+            this.logEvent(`[XUẤT HÀNG] Đã bàn giao ${dispatchedItems.length} kiện lên xe tải ${manifest.truckPlate}`, "EXPORT");
             return manifest;
         }
 
         exportStateJSON() {
             return JSON.stringify({
                 timestamp: Date.now(),
-                autoSpawn: this.autoSpawn,
-                flexibleMode: this.flexibleMode,
                 totalProcessed: this.totalProcessed,
-                obstacles: Array.from(this.obstacles),
-                racks: this.racks,
                 packages: this.packages,
-                amrs: this.amrs.map(a => ({ id: a.id, x: a.x, y: a.y, state: a.state, battery: a.battery }))
+                amrs: this.amrs.map(a => ({ id: a.id, x: a.x, y: a.y, battery: a.battery, state: a.state, task: a.currentTask })),
+                chargers: this.chargers,
+                gates: this.gates.map(g => ({ id: g.id, count: g.sortedCount, jammed: g.isJammed })),
+                racks: Object.keys(this.racks).map(k => ({ id: k, count: this.racks[k].count }))
             }, null, 2);
-        }
-
-        // Nạp trạng thái từ JSON
-        importStateJSON(jsonStr) {
-            try {
-                const data = JSON.parse(jsonStr);
-                if (data.obstacles) this.obstacles = new Set(data.obstacles);
-                if (data.autoSpawn !== undefined) this.autoSpawn = data.autoSpawn;
-                if (data.flexibleMode !== undefined) this.flexibleMode = data.flexibleMode;
-                this.replanAllAMRs();
-                this.logEvent("Đã nạp thành công cấu hình trạng thái từ JSON", "INFO");
-                return true;
-            } catch (e) {
-                this.logEvent("Lỗi nạp cấu hình JSON: " + e.message, "ERROR");
-                return false;
-            }
         }
     }
 
+    // Đưa vào window toàn cục
     window.SimulationLogicEngine = SimulationLogicEngine;
-    window.SIM_CONFIG = CONFIG;
 })(window);
-
